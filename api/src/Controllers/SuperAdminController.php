@@ -52,16 +52,22 @@ class SuperAdminController {
     public function listTenants() {
         $this->checkAccess();
         try {
+            // Intentamos una consulta más simple primero para evitar errores de columnas calculadas
             $tenants = Database::fetchAll("
-                SELECT t.*, 
-                       (SELECT COUNT(*) FROM users WHERE tenant_id = t.id) as users_count,
-                       (SELECT COUNT(*) FROM projects WHERE client_id IN (SELECT id FROM clients WHERE tenant_id = t.id)) as projects_count
+                SELECT t.*
                 FROM tenants t 
-                ORDER BY t.created_at DESC
+                ORDER BY t.id DESC
             ");
+            
+            // Enriquecemos con conteos de forma segura
+            foreach ($tenants as &$tenant) {
+                $tenant['users_count'] = (int)Database::fetchOne("SELECT COUNT(*) as c FROM users WHERE tenant_id = ?", [$tenant['id']])['c'];
+                $tenant['projects_count'] = (int)Database::fetchOne("SELECT COUNT(*) as c FROM projects WHERE tenant_id = ?", [$tenant['id']])['c'];
+            }
+
             return Response::json($tenants);
         } catch (\Throwable $e) {
-            return Response::error($e->getMessage());
+            return Response::error("Error en listado: " . $e->getMessage());
         }
     }
 
@@ -85,7 +91,8 @@ class SuperAdminController {
                 $existingTenant = Database::fetchOne("SELECT id FROM tenants WHERE name = ?", [$body['name']]);
                 if ($existingTenant) return Response::error("Ya existe una empresa con ese nombre.", 400);
 
-                $existingUser = Database::fetchOne("SELECT id FROM users WHERE email = ?", [$body['admin_email']]);
+                $adminEmail = $body['admin_email'] ?? '';
+                $existingUser = Database::fetchOne("SELECT id FROM users WHERE email = ?", [$adminEmail]);
                 if ($existingUser) return Response::error("El email del administrador ya está en uso.", 400);
 
                 $db->beginTransaction();
@@ -96,7 +103,7 @@ class SuperAdminController {
                 ]);
                 $tenantId = $db->lastInsertId();
 
-                // 3. Crear System Config (Colores por defecto o personalizados)
+                // 3. Crear System Config
                 Database::query("
                     INSERT INTO system_config 
                     (tenant_id, company_name, logo_url, currency, primary_color, secondary_color, accent_color, sidebar_bg, sidebar_text, color_approved, color_submitted, color_rejected, color_draft) 
@@ -117,19 +124,19 @@ class SuperAdminController {
                     $body['color_draft']      ?? '#94a3b8'
                 ]);
 
-                // 4. Crear Usuario Administrador (Rol ID 1)
-                $passwordHash = password_hash($body['admin_password'], PASSWORD_DEFAULT);
+                // 4. Crear Usuario Administrador
+                $passwordHash = password_hash($body['admin_password'] ?? '123456', PASSWORD_DEFAULT);
                 Database::query("
                     INSERT INTO users (name, email, password, role, role_id, tenant_id, weekly_capacity, hourly_cost) 
                     VALUES (?, ?, ?, 'admin', 1, ?, 40, 0)
                 ", [
-                    $body['admin_name'],
-                    $body['admin_email'],
+                    $body['admin_name'] ?? 'Admin',
+                    $adminEmail,
                     $passwordHash,
                     $tenantId
                 ]);
 
-                // 5. Matriz de Permisos por defecto (Acceso Total para Rol 1)
+                // 5. Matriz de Permisos
                 $features = [
                     'dashboard', 'kanban', 'tracker', 'approvals', 'projects', 
                     'clients', 'costs', 'report_heatmaps', 'report_audit', 
@@ -148,21 +155,17 @@ class SuperAdminController {
             return Response::json(['success' => true]);
         } catch (\Throwable $e) {
             if (isset($db) && $db->inTransaction()) $db->rollBack();
-            return Response::error($e->getMessage());
+            return Response::error("Error en DB: " . $e->getMessage());
         }
     }
 
     public function deleteTenant($id) {
         $this->checkAccess();
         try {
-            // Verificar si hay usuarios
-            $hasUsers = Database::fetchOne("SELECT id FROM users WHERE tenant_id = ? LIMIT 1", [$id]);
-            if ($hasUsers) return Response::error("No se puede eliminar una empresa con usuarios activos. Pausa la empresa en su lugar.", 400);
-            
             Database::query("DELETE FROM tenants WHERE id = ?", [$id]);
             return Response::json(['success' => true]);
         } catch (\Throwable $e) {
-            return Response::error($e->getMessage());
+            return Response::error("Error al eliminar: " . $e->getMessage());
         }
     }
 
