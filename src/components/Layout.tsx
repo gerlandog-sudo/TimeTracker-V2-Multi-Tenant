@@ -289,12 +289,14 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
         <div className="p-4 border-t border-black/5">
           <div className={`flex items-center ${isSidebarOpen ? 'px-2' : 'justify-center'}`}>
+            {/* 
             {isSidebarOpen && (
               <div className="flex-1 min-w-0 mr-3">
                 <p className="text-sm font-semibold truncate" style={{ color: 'var(--sidebar-text)' }}>{user.name}</p>
                 <p className="text-xs opacity-60 truncate uppercase">{user.role}</p>
               </div>
             )}
+            */}
             {/* 
             <button 
               onClick={handleLogout}
