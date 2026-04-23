@@ -2,8 +2,10 @@
 
 Este documento detalla el paso a paso para la transformación del paradigma monolítico de TimeTracker hacia una plataforma SaaS (Software as a Service) modular y escalable.
 
-## 1. Cambio de Paradigma
-Pasar de una aplicación que gestiona una sola empresa a una infraestructura capaz de gestionar múltiples organizaciones (Tenants) de forma aislada bajo un mismo código base.
+## 1. Cambio de Paradigma: Del Monolito a Micro-Servicios
+- **Infraestructura Actual**: Transición de una aplicación "todo-en-uno" hacia un Backend desacoplado (API REST) y un Frontend independiente (SPA).
+- **Aislamiento de Lógica**: Cada controlador en `api/src/Controllers` está diseñado para funcionar como un módulo autónomo, facilitando su futura migración a microservicios reales (Node.js, Go o contenedores independientes).
+- **Servicios Externos**: Integración modular de servicios de IA y procesamiento de datos.
 
 ## 2. Fase 1: Capa de Datos (Aislamiento)
 - [x] **Identificador Único**: Añadir `tenant_id` a todas las tablas del sistema.
@@ -30,5 +32,10 @@ Pasar de una aplicación que gestiona una sola empresa a una infraestructura cap
 - [x] **Simulación de Costos**: Módulo de IA para predicción de rentabilidad por perfil.
 - [ ] **Activación por Plan**: Lógica para habilitar/deshabilitar IA según el contrato del tenant.
 
+## 7. Fase 6: Desacoplamiento y Microservicios
+- [x] **API First**: El frontend no tiene lógica de negocio, solo consume endpoints.
+- [ ] **Service Discovery**: Implementar un gestor de servicios para escalar módulos pesados (IA/Reportes) en servidores dedicados.
+- [ ] **Event-Driven**: Migrar la auditoría y notificaciones a un sistema basado en eventos para no bloquear el hilo principal de ejecución.
+
 ---
-*Documento de Estrategia - TimeTracker V2 Modular Architecture (rev. 2026)*
+*Documento de Estrategia - TimeTracker V2 Modular Architecture & Microservices (rev. 2026)*
