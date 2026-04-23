@@ -1,0 +1,19 @@
+RewriteEngine On
+RewriteBase /
+
+# Pass Authorization Header to PHP
+RewriteCond %{HTTP:Authorization} .
+RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]
+
+# API Routing
+RewriteCond %{REQUEST_URI} !/api/update\.php
+RewriteCond %{REQUEST_URI} !/api/Limpieza\.php
+RewriteCond %{REQUEST_URI} !/api/DemoData\.php
+RewriteCond %{REQUEST_URI} !/api/migracion_tenant_maestros\.php
+RewriteRule ^api/(.*)$ api/index.php?path=$1 [L,QSA]
+
+# React SPA Routing
+# If the file or directory doesn't exist, send it to index.html
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule . index.html [L]

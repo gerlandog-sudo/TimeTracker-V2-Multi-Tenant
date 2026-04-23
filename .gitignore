@@ -1,0 +1,11 @@
+node_modules/
+dist/
+ready_for_deploy/
+build/
+coverage/
+.DS_Store
+*.log
+.env*
+!.env.example
+api/config.php
+.env

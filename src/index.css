@@ -1,0 +1,45 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --color-primary: var(--primary);
+  --color-secondary: var(--secondary);
+  --color-accent: var(--accent);
+  --color-sidebar-bg: var(--sidebar-bg);
+  --color-sidebar-text: var(--sidebar-text);
+  --color-status-approved: var(--color-approved);
+  --color-status-rejected: var(--color-rejected);
+  --color-status-submitted: var(--color-submitted);
+  --color-status-draft: var(--color-draft);
+}
+
+:root {
+  --primary: #3b82f6;
+  --secondary: #1f2937;
+  --accent: #3b82f6;
+  --sidebar-bg: #ffffff;
+  --sidebar-text: #1f2937;
+}
+
+body {
+  @apply bg-gray-50 text-gray-900;
+  font-family: var(--font-sans);
+}
+
+/* Minimalist Notion-like scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 10px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
