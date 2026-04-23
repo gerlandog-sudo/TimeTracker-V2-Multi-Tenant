@@ -311,7 +311,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           {/* Platform Version */}
           <div className="mt-auto px-6 py-4 border-t border-gray-50">
             <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">TimeTracker</span>
+              <span className="text-[10px] font-black text-gray-400 tracking-widest">TimeTracker</span>
               <span className="text-[10px] font-bold text-gray-300">v{typeof APP_VERSION !== 'undefined' ? APP_VERSION : '2.01.001'}</span>
             </div>
           </div>
