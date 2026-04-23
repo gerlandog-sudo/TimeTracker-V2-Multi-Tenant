@@ -9,29 +9,32 @@ use App\Core\Database;
 try {
     $db = Database::connect();
     
-    echo "Iniciando migración de tabla 'permissions'...\n";
+    echo "Iniciando corrección de índices en 'permissions'...\n";
 
-    // 1. Intentar eliminar la clave primaria actual (si existe)
-    try {
-        $db->exec("ALTER TABLE permissions DROP PRIMARY KEY");
-        echo "- Clave primaria antigua eliminada.\n";
-    } catch (Exception $e) {
-        echo "- Nota: No se pudo eliminar la PK (posiblemente no existía o era distinta): " . $e->getMessage() . "\n";
-    }
-
-    // 2. Intentar eliminar el índice único 'role_feature' que está causando el error 1062
+    // 1. Ya sabemos que el índice 'role_feature' fue eliminado en el paso anterior.
+    // Si no se eliminó por alguna razón, lo intentamos de nuevo silenciosamente.
     try {
         $db->exec("DROP INDEX role_feature ON permissions");
-        echo "- Índice 'role_feature' eliminado.\n";
+        echo "- Índice antiguo 'role_feature' eliminado.\n";
     } catch (Exception $e) {
-        echo "- Nota: El índice 'role_feature' no existía o ya fue eliminado.\n";
+        echo "- Nota: El índice antiguo ya no existe.\n";
     }
 
-    // 3. Crear la nueva Clave Primaria incluyendo tenant_id
-    $db->exec("ALTER TABLE permissions ADD PRIMARY KEY (role_id, feature, tenant_id)");
-    echo "- Nueva clave primaria (role_id, feature, tenant_id) creada con éxito.\n";
+    // 2. Crear el nuevo Índice Único que incluye tenant_id
+    // Usamos ADD UNIQUE INDEX en lugar de PRIMARY KEY para no interferir con la columna ID autoincremental
+    try {
+        $db->exec("ALTER TABLE permissions ADD UNIQUE INDEX role_feature_tenant (role_id, feature, tenant_id)");
+        echo "- Nuevo índice multi-tenant (role_id, feature, tenant_id) creado con éxito.\n";
+    } catch (Exception $e) {
+        if (strpos($e->getMessage(), 'Duplicate key name') !== false) {
+            echo "- El índice nuevo ya existía.\n";
+        } else {
+            throw $e;
+        }
+    }
 
-    echo "\nMigración finalizada correctamente. Ya puede intentar el alta de empresa de nuevo.\n";
+    echo "\n¡Éxito! La estructura de permisos ha sido actualizada correctamente.\n";
+    echo "Ya puede intentar dar de alta la empresa en la plataforma.\n";
 
 } catch (Exception $e) {
     die("\nERROR FATAL en migración: " . $e->getMessage());
