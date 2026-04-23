@@ -401,13 +401,13 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   setShowProfileMenu(!showProfileMenu);
                   setShowNotifications(false);
                 }}
-                className="flex items-center gap-2 p-1 pl-3 pr-2 hover:bg-gray-50 rounded-full border border-gray-100 transition-all"
+                className="flex items-center gap-2 p-1 pl-3 pr-2 hover:bg-gray-50 rounded-2xl border border-gray-100 transition-all"
               >
                 <div className="text-right hidden sm:block">
                   <p className="text-xs font-bold text-gray-900 leading-none">{user.name}</p>
                   <p className="text-[10px] text-gray-400 uppercase font-bold leading-none mt-1">{user.role}</p>
                 </div>
-                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                   <User className="w-5 h-5" />
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
