@@ -105,6 +105,14 @@ header('Access-Control-Allow-Headers: Content-Type, Authorization, X-Authorizati
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') exit;
 
+// ===== EXCEPCIÓN PARA SCRIPTS DE MIGRACIÓN INDEPENDIENTES =====
+$path = $_GET['path'] ?? '';
+if (strpos($path, 'migra_') === 0 && file_exists(__DIR__ . '/' . $path)) {
+    header('Content-Type: text/plain');
+    require_once __DIR__ . '/' . $path;
+    exit;
+}
+
 // ===== AUTENTICACIÓN =====
 $token = Request::getAuthToken();
 if ($token) {
