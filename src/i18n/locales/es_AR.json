@@ -551,6 +551,10 @@
     "column_date": "Fecha y Hora",
     "column_entity": "Empresa / Usuario",
     "column_change": "Cambio de Estado",
-    "column_action": "Comentario / Acción"
+    "column_action": "Comentario / Acción",
+    "visual_identity": "Identidad Visual",
+    "initial_admin": "Administrador Inicial",
+    "brand_config": "Configuración de Marca",
+    "company_details": "Datos de la Empresa"
   }
 }
