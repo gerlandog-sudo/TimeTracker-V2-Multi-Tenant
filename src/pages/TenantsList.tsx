@@ -1,20 +1,27 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { 
-  Plus, 
   Building2, 
-  Globe, 
-  Users, 
-  Briefcase, 
-  Loader2, 
+  Plus, 
   Search, 
+  Filter, 
+  MoreVertical, 
+  Pencil, 
   Trash2, 
-  AlertTriangle, 
-  X,
-  ShieldCheck,
-  PauseCircle,
+  ExternalLink, 
+  Save, 
+  X, 
+  ChevronRight, 
+  ChevronLeft, 
+  Users, 
+  ShieldCheck, 
+  Globe, 
+  Palette,
+  Check,
+  Loader2,
   PlayCircle,
-  ExternalLink
+  PauseCircle,
+  AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../lib/api';
@@ -24,7 +31,8 @@ const TenantsList: React.FC = () => {
   const { t } = useTranslation();
   const [tenants, setTenants] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [isModalOpen, setModalOpen] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const { success: notifySuccess, error: notifyError } = useNotification();
   const [searchTerm, setSearchTerm] = useState('');
@@ -105,8 +113,24 @@ const TenantsList: React.FC = () => {
         admin_password: ''
       });
     }
-    setModalOpen(true);
+    setCurrentStep(1);
+    setIsModalOpen(true);
   };
+
+  const nextStep = () => {
+    if (currentStep === 1) {
+      if (!formData.name) {
+        notifyError(t('super.tenants.error_name_required'));
+        return;
+      }
+    }
+    if (currentStep === 2) {
+      // Validaciones paso 2 si fueran necesarias
+    }
+    setCurrentStep(prev => Math.min(prev + 1, 3));
+  };
+
+  const prevStep = () => setCurrentStep(prev => Math.max(prev - 1, 1));
 
   const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -124,33 +148,33 @@ const TenantsList: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.id && (!formData.admin_email || !formData.admin_password)) {
-      notifyError('El usuario administrador es obligatorio');
+      notifyError(t('super.tenants.admin_required'));
       return;
     }
     setSubmitting(true);
     try {
       await api.post('/super/tenants', formData);
-      notifySuccess(formData.id ? 'Empresa actualizada' : 'Empresa creada correctamente');
-      setModalOpen(false);
+      notifySuccess(t('super.tenants.save_success'));
+      setIsModalOpen(false);
       fetchTenants();
     } catch (error: any) {
-      notifyError(error.response?.data?.message || 'Error al guardar empresa');
+      notifyError(error.response?.data?.message || t('common.error'));
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (id: number) => {
-    if (!confirm('¿Está seguro de eliminar esta empresa? Esta acción no se puede deshacer si hay datos vinculados.')) return;
+    if (!confirm(t('super.tenants.delete_warning'))) return;
     try {
       await api.delete(`/super/tenants/${id}`);
-      notifySuccess('Empresa eliminada');
+      notifySuccess(t('super.tenants.delete_success'));
       fetchTenants();
     } catch (error: any) {
-      notifyError(error.response?.data?.message || 'No se puede eliminar la empresa');
+      notifyError(error.response?.data?.message || t('super.tenants.delete_cannot_users'));
     }
   };
 
@@ -165,6 +189,36 @@ const TenantsList: React.FC = () => {
   const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
   const currentTenants = filteredTenants.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
+  const [isDeleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [tenantToDelete, setTenantToDelete] = useState<number | null>(null);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      setTimeout(() => firstInputRef.current?.focus(), 100);
+    }
+  }, [isModalOpen]);
+
+  const handleDeleteClick = (e: React.MouseEvent, id: number) => {
+    e.stopPropagation();
+    setTenantToDelete(id);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!tenantToDelete) return;
+    try {
+      await api.delete(`/super/tenants/${tenantToDelete}`);
+      notifySuccess(t('common.success'));
+      fetchTenants();
+    } catch (error: any) {
+      notifyError(error.response?.data?.message || t('common.error'));
+    } finally {
+      setDeleteModalOpen(false);
+      setTenantToDelete(null);
+    }
+  };
+
   const toggleStatus = async (e: React.MouseEvent, tenant: any) => {
     e.stopPropagation(); // Evitar que se abra el modal de edición
     const states = ['active', 'paused', 'suspended'];
@@ -173,10 +227,10 @@ const TenantsList: React.FC = () => {
     
     try {
       await api.post('/super/tenants', { id: tenant.id, status: nextStatus });
-      notifySuccess(`Estado de ${tenant.name} cambiado a ${nextStatus}`);
+      notifySuccess(t('super.tenants.status_updated', { name: tenant.name, status: t(`super.tenants.status_${nextStatus}`) }));
       fetchTenants();
     } catch (error: any) {
-      notifyError('Error al cambiar estado');
+      notifyError(t('common.error'));
     }
   };
 
@@ -191,7 +245,7 @@ const TenantsList: React.FC = () => {
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
-      <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
     </div>
   );
 
@@ -286,19 +340,19 @@ const TenantsList: React.FC = () => {
                       <button 
                         onClick={(e) => { e.stopPropagation(); handleOpenModal(tenant); }}
                         className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                        title="Editar Configuración"
+                        title={t('common.edit')}
                       >
-                        <ShieldCheck className="w-5 h-5" />
+                        <Pencil className="w-4 h-4" />
                       </button>
                       <button 
-                        onClick={(e) => { e.stopPropagation(); handleDelete(tenant.id); }}
+                        onClick={(e) => handleDeleteClick(e, tenant.id)}
                         disabled={Number(tenant.users_count) > 1}
                         className={`p-2 rounded-xl transition-all ${
                           Number(tenant.users_count) > 1 
                           ? 'text-gray-200 cursor-not-allowed' 
                           : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
                         }`}
-                        title={Number(tenant.users_count) > 1 ? 'No se puede eliminar: tiene usuarios' : 'Eliminar Empresa'}
+                        title={Number(tenant.users_count) > 1 ? t('super.tenants.delete_cannot_users') : t('super.tenants.delete_button')}
                       >
                         <Trash2 className="w-5 h-5" />
                       </button>
@@ -336,7 +390,41 @@ const TenantsList: React.FC = () => {
         )}
       </div>
 
-      {/* Modal */}
+      {/* Modal de Borrado Personalizado */}
+      <AnimatePresence>
+        {isDeleteModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl text-center"
+            >
+              <div className="w-16 h-16 bg-red-50 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 mb-2">{t('super.tenants.delete_confirm')}</h3>
+              <p className="text-sm text-gray-500 mb-8 font-medium">{t('super.tenants.delete_warning')}</p>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setDeleteModalOpen(false)}
+                  className="flex-1 py-3 px-4 border border-gray-100 rounded-xl font-black text-[10px] uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-all"
+                >
+                  {t('common.cancel')}
+                </button>
+                <button 
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 px-4 bg-red-500 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-red-600 transition-all shadow-lg shadow-red-200"
+                >
+                  {t('common.delete')}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Modal de Registro */}
       <AnimatePresence>
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
@@ -344,63 +432,73 @@ const TenantsList: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[1.5rem] w-full max-w-3xl overflow-hidden shadow-2xl my-4 border border-gray-100"
+              className="bg-white rounded-[2rem] w-full max-w-4xl overflow-hidden shadow-2xl my-4 border border-gray-100 flex flex-col"
             >
-              {/* Header con gradiente sutil */}
-              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50/50 to-white sticky top-0 z-10 backdrop-blur-md">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-200">
-                    <Building2 className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-black text-gray-900 leading-tight">
-                      {formData.id ? 'Configuración' : 'Nueva Empresa'}
-                    </h3>
-                    <p className="text-[9px] text-gray-400 uppercase font-bold tracking-widest">
-                      {formData.id ? `ID: ${formData.id}` : 'Registro de nuevo Tenant'}
-                    </p>
-                  </div>
-                </div>
-                <button 
-                  onClick={() => setModalOpen(false)} 
-                  className="text-gray-400 hover:text-red-500 bg-white p-1.5 rounded-full shadow-sm hover:shadow-md transition-all active:scale-90"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              </div>
-              
-              <form onSubmit={handleSave} className="p-6 space-y-6 bg-white">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Stepper Header Compacto */}
+              <div className="px-8 py-4 bg-gray-50/50 border-b border-gray-100">
+                <div className="relative flex justify-between max-w-2xl mx-auto">
+                  <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-1/2 z-0"></div>
+                  <motion.div 
+                    className="absolute top-1/2 left-0 h-0.5 bg-indigo-500 -translate-y-1/2 z-0"
+                    initial={{ width: "0%" }}
+                    animate={{ width: currentStep === 1 ? "0%" : currentStep === 2 ? "50%" : "100%" }}
+                  />
                   
-                  {/* COLUMNA IZQUIERDA: EMPRESA E IDENTIDAD */}
-                  <div className="space-y-6">
-                    {/* Grupo 1: Datos Base */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-1 h-1 rounded-full bg-indigo-500"></span>
-                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">General</h4>
+                  {[1, 2, 3].map((step) => (
+                    <div key={step} className="relative z-10 flex flex-col items-center gap-1.5">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 transition-all duration-500 ${
+                        currentStep >= step ? 'bg-indigo-600 border-indigo-100 text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'
+                      }`}>
+                        {currentStep > step ? <Check className="w-4 h-4" /> : <span className="font-bold text-xs">{step}</span>}
                       </div>
-                      <div className="grid grid-cols-1 gap-3">
-                        <div className="group">
-                          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('super.tenant_name')}</label>
-                          <input 
-                            required
-                            type="text"
-                            value={formData.name}
-                            onChange={(e) => setFormData({...formData, name: e.target.value})}
-                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-xs font-medium"
-                            placeholder="Nombre de Empresa"
-                          />
+                      <span className={`text-[9px] font-black uppercase tracking-widest ${currentStep >= step ? 'text-indigo-600' : 'text-gray-400'}`}>
+                        {step === 1 ? t('super.tenants.section_general') : step === 2 ? t('super.tenants.section_identity') : t('super.tenants.section_admin')}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Form Content Sin Scroll */}
+              <form onSubmit={handleSubmit} className="p-8">
+                <AnimatePresence mode="wait">
+                  {currentStep === 1 && (
+                    <motion.div 
+                      key="step1"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="grid grid-cols-1 md:grid-cols-2 gap-8"
+                    >
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600">
+                            <Building2 className="w-4 h-4" />
+                          </div>
+                          <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-wider">{t('super.tenants.section_general')}</h4>
                         </div>
-                        <div className="grid grid-cols-2 gap-3">
+                        
+                        <div className="space-y-3">
+                          <div>
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('super.tenant_name')}</label>
+                            <input 
+                              ref={firstInputRef}
+                              required
+                              type="text"
+                              value={formData.name}
+                              onChange={(e) => setFormData({...formData, name: e.target.value})}
+                              className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium"
+                              placeholder={t('super.tenants.placeholder_name')}
+                            />
+                          </div>
                           <div>
                             <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('super.domain')}</label>
                             <input 
                               type="text"
                               value={formData.domain}
                               onChange={(e) => setFormData({...formData, domain: e.target.value})}
-                              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-xs font-medium"
-                              placeholder="acme.pmaas.com"
+                              className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium"
+                              placeholder={t('super.tenants.placeholder_domain')}
                             />
                           </div>
                           <div>
@@ -408,158 +506,220 @@ const TenantsList: React.FC = () => {
                             <select 
                               value={formData.status}
                               onChange={(e) => setFormData({...formData, status: e.target.value})}
-                              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-xs font-medium appearance-none"
+                              className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium appearance-none"
                             >
-                              <option value="active">Activa</option>
-                              <option value="paused">Pausada</option>
+                              <option value="active">{t('super.tenants.status_active')}</option>
+                              <option value="paused">{t('super.tenants.status_paused')}</option>
+                              <option value="suspended">{t('super.tenants.status_suspended')}</option>
                             </select>
                           </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Grupo 2: Marca Blanca */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-1 h-1 rounded-full bg-cyan-500"></span>
-                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Identidad</h4>
-                      </div>
-                      
-                      <div className="p-4 bg-gray-50 border border-gray-100 rounded-[1rem] space-y-4">
-                        <div className="grid grid-cols-3 gap-2">
-                          <div className="space-y-1.5 text-center">
-                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-tighter">Primario</label>
-                            <input type="color" value={formData.primary_color} onChange={(e) => setFormData({...formData, primary_color: e.target.value})} className="h-9 w-9 rounded-full cursor-pointer border-2 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className="w-8 h-8 rounded-lg bg-pink-100 flex items-center justify-center text-pink-600">
+                            <Plus className="w-4 h-4" />
                           </div>
-                          <div className="space-y-1.5 text-center">
-                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-tighter">Secundario</label>
-                            <input type="color" value={formData.secondary_color} onChange={(e) => setFormData({...formData, secondary_color: e.target.value})} className="h-9 w-9 rounded-full cursor-pointer border-2 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
-                          </div>
-                          <div className="space-y-1.5 text-center">
-                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-tighter">Acento</label>
-                            <input type="color" value={formData.accent_color} onChange={(e) => setFormData({...formData, accent_color: e.target.value})} className="h-9 w-9 rounded-full cursor-pointer border-2 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
-                          </div>
+                          <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-wider">{t('super.tenants.section_branding')}</h4>
                         </div>
-                        
-                        <div className="grid grid-cols-2 gap-2">
-                          <div className="flex items-center gap-2.5 p-2 bg-white border border-gray-100 rounded-lg">
-                            <div className="w-5 h-5 rounded shadow-inner" style={{backgroundColor: formData.sidebar_bg}}></div>
-                            <div className="flex-1">
-                              <label className="block text-[8px] font-bold text-gray-400 uppercase">Sidebar</label>
-                              <input type="text" value={formData.sidebar_bg} onChange={(e) => setFormData({...formData, sidebar_bg: e.target.value})} className="w-full text-[9px] font-mono outline-none border-none p-0" />
+                        <div className="flex flex-col items-center justify-center gap-4 p-6 bg-indigo-50/20 border-2 border-dashed border-indigo-100 rounded-[2rem] text-center">
+                          <div className="relative">
+                            <div className="w-24 h-24 bg-white rounded-3xl border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
+                              {formData.logo_url ? (
+                                <img src={formData.logo_url} alt="Preview" className="w-full h-full object-contain p-2" />
+                              ) : (
+                                <Building2 className="w-10 h-10 text-indigo-100" />
+                              )}
                             </div>
+                            <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-indigo-700 transition-all border-4 border-white">
+                              <Plus className="w-4 h-4" />
+                              <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                            </label>
                           </div>
-                          <div className="flex items-center gap-2.5 p-2 bg-white border border-gray-100 rounded-lg">
-                            <div className="w-5 h-5 rounded shadow-inner" style={{backgroundColor: formData.sidebar_text}}></div>
-                            <div className="flex-1">
-                              <label className="block text-[8px] font-bold text-gray-400 uppercase">Texto</label>
-                              <input type="text" value={formData.sidebar_text} onChange={(e) => setFormData({...formData, sidebar_text: e.target.value})} className="w-full text-[9px] font-mono outline-none border-none p-0" />
-                            </div>
-                          </div>
+                          <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest">{t('super.company_logo')}</p>
                         </div>
                       </div>
-                    </div>
-                  </div>
+                    </motion.div>
+                  )}
 
-                  {/* COLUMNA DERECHA: LOGO Y ADMIN */}
-                  <div className="space-y-6">
-                    
-                    {/* Grupo 3: Logo */}
-                    <div className="space-y-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="w-1 h-1 rounded-full bg-pink-500"></span>
-                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Branding</h4>
-                      </div>
-                      <div className="flex flex-col items-center gap-3 p-6 bg-indigo-50/20 border border-dashed border-indigo-100 rounded-[1.5rem] text-center">
-                        <div className="relative">
-                          <div className="w-20 h-20 bg-white rounded-2xl border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
-                            {formData.logo_url ? (
-                              <img src={formData.logo_url} alt="Preview" className="w-full h-full object-contain" />
-                            ) : (
-                              <Building2 className="w-8 h-8 text-indigo-100" />
-                            )}
-                          </div>
-                          <label className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-indigo-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-indigo-700 transition-all">
-                            <Plus className="w-3.5 h-3.5" />
-                            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
-                          </label>
+                  {currentStep === 2 && (
+                    <motion.div 
+                      key="step2"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-6"
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-cyan-100 flex items-center justify-center text-cyan-600">
+                          <Palette className="w-4 h-4" />
                         </div>
-                        <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider">Logo de Empresa</p>
+                        <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-wider">{t('super.tenants.section_identity')}</h4>
                       </div>
-                    </div>
 
-                    {/* Grupo 4: Administrador Initial */}
-                    {!formData.id && (
-                      <div className="space-y-3">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                          <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Admin</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-4 bg-gray-50/50 border border-gray-100 rounded-xl space-y-4">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('super.tenants.main_colors')}</p>
+                          <div className="space-y-4">
+                            {[
+                              { key: 'primary_color', label: 'super.tenants.color_primary' },
+                              { key: 'secondary_color', label: 'super.tenants.color_secondary' },
+                              { key: 'accent_color', label: 'super.tenants.color_accent' }
+                            ].map((c) => (
+                              <div key={c.key} className="space-y-1.5">
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-tight ml-1">{t(c.label)}</label>
+                                <div className="flex gap-2">
+                                  <input 
+                                    type="color" 
+                                    value={formData[c.key as keyof typeof formData] as string} 
+                                    onChange={(e) => setFormData({...formData, [c.key]: e.target.value})} 
+                                    className="h-9 w-12 p-1 bg-white border border-gray-200 rounded cursor-pointer" 
+                                  />
+                                  <input 
+                                    type="text" 
+                                    value={formData[c.key as keyof typeof formData] as string} 
+                                    onChange={(e) => setFormData({...formData, [c.key]: e.target.value})} 
+                                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-mono font-bold text-gray-600" 
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                        <div className="p-4 bg-emerald-50/20 border border-emerald-100 rounded-[1.5rem] space-y-3">
-                          <div>
-                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('users.name')}</label>
+
+                        <div className="p-4 bg-gray-50/50 border border-gray-100 rounded-xl space-y-4">
+                          <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('super.tenants.interface_colors')}</p>
+                          <div className="space-y-4">
+                            {[
+                              { key: 'sidebar_bg', label: 'super.tenants.color_sidebar' },
+                              { key: 'sidebar_text', label: 'super.tenants.color_text' }
+                            ].map((c) => (
+                              <div key={c.key} className="space-y-1.5">
+                                <label className="block text-[10px] font-bold text-gray-500 uppercase tracking-tight ml-1">{t(c.label)}</label>
+                                <div className="flex gap-2">
+                                  <input 
+                                    type="color" 
+                                    value={formData[c.key as keyof typeof formData] as string} 
+                                    onChange={(e) => setFormData({...formData, [c.key]: e.target.value})} 
+                                    className="h-9 w-12 p-1 bg-white border border-gray-200 rounded cursor-pointer" 
+                                  />
+                                  <input 
+                                    type="text" 
+                                    value={formData[c.key as keyof typeof formData] as string} 
+                                    onChange={(e) => setFormData({...formData, [c.key]: e.target.value})} 
+                                    className="flex-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-mono font-bold text-gray-600" 
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {currentStep === 3 && (
+                    <motion.div 
+                      key="step3"
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      exit={{ opacity: 0, x: -20 }}
+                      className="space-y-6"
+                    >
+                      <div className="flex items-center gap-3 mb-4">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-100 flex items-center justify-center text-emerald-600">
+                          <Users className="w-4 h-4" />
+                        </div>
+                        <h4 className="text-[11px] font-black text-gray-700 uppercase tracking-wider">{t('super.tenants.section_admin')}</h4>
+                      </div>
+
+                      <div className="bg-gray-50/50 p-4 rounded-xl border border-gray-100 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight ml-1">{t('users.name')}</label>
                             <input 
                               required={!formData.id}
                               type="text"
                               value={formData.admin_name}
                               onChange={(e) => setFormData({...formData, admin_name: e.target.value})}
-                              className="w-full px-4 py-2 bg-white border border-emerald-100 rounded-xl outline-none text-xs font-medium"
-                              placeholder="Nombre"
+                              className="w-full px-3 py-2 bg-white border border-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                              placeholder={t('users.name')}
                             />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('users.email')}</label>
-                              <input 
-                                required={!formData.id}
-                                type="email"
-                                value={formData.admin_email}
-                                onChange={(e) => setFormData({...formData, admin_email: e.target.value})}
-                                className="w-full px-4 py-2 bg-white border border-emerald-100 rounded-xl outline-none text-xs font-medium"
-                                placeholder="email"
-                              />
-                            </div>
-                            <div>
-                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('users.password')}</label>
-                              <input 
-                                required={!formData.id}
-                                type="password"
-                                value={formData.admin_password}
-                                onChange={(e) => setFormData({...formData, admin_password: e.target.value})}
-                                className="w-full px-4 py-2 bg-white border border-emerald-100 rounded-xl outline-none text-xs font-medium"
-                                placeholder="••••"
-                              />
-                            </div>
+                          <div className="space-y-1">
+                            <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight ml-1">{t('users.email')}</label>
+                            <input 
+                              required={!formData.id}
+                              type="email"
+                              value={formData.admin_email}
+                              onChange={(e) => setFormData({...formData, admin_email: e.target.value})}
+                              className="w-full px-3 py-2 bg-white border border-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                              placeholder={t('users.email')}
+                            />
                           </div>
                         </div>
+                        <div className="space-y-1">
+                          <label className="text-[10px] font-bold text-gray-500 uppercase tracking-tight ml-1">{t('users.password')}</label>
+                          <input 
+                            required={!formData.id}
+                            type="password"
+                            value={formData.admin_password}
+                            onChange={(e) => setFormData({...formData, admin_password: e.target.value})}
+                            className="w-full px-3 py-2 bg-white border border-gray-100 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 outline-none"
+                            placeholder="••••••••"
+                          />
+                        </div>
                       </div>
-                    )}
-                  </div>
-                </div>
-                
-                {/* Footer del Modal */}
-                <div className="pt-4 flex gap-3 sticky bottom-0 bg-white">
-                  <button 
-                    type="button"
-                    onClick={() => setModalOpen(false)}
-                    className="flex-1 py-3 px-4 border border-gray-100 rounded-xl font-black text-[10px] uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-all active:scale-95"
-                  >
-                    {t('common.cancel')}
-                  </button>
-                  <button 
-                    type="submit"
-                    disabled={submitting}
-                    className="flex-[2] py-3 px-4 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xl shadow-indigo-200 active:scale-95"
-                  >
-                    {submitting ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <ShieldCheck className="w-4 h-4" />
-                    )}
-                    {formData.id ? t('common.save') : t('super.add_tenant')}
-                  </button>
-                </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </form>
+
+              {/* Action Buttons Compacto */}
+              <div className="px-8 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
+                <button 
+                  type="button"
+                  onClick={currentStep === 1 ? () => setIsModalOpen(false) : prevStep}
+                  className="px-6 py-2.5 text-gray-500 font-bold text-xs uppercase tracking-widest hover:text-gray-700 transition-colors flex items-center gap-2"
+                >
+                  {currentStep === 1 ? t('common.cancel') : (
+                    <>
+                      <ChevronLeft className="w-4 h-4" />
+                      {t('common.previous')}
+                    </>
+                  )}
+                </button>
+
+                <div className="flex items-center gap-3">
+                  {currentStep < 3 ? (
+                    <button 
+                      type="button"
+                      onClick={nextStep}
+                      className="px-8 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all flex items-center gap-2"
+                    >
+                      {t('common.next')}
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  ) : (
+                    <button 
+                      type="submit"
+                      onClick={handleSubmit}
+                      disabled={submitting}
+                      className="px-10 py-2.5 bg-indigo-600 text-white rounded-2xl font-bold text-xs uppercase tracking-widest shadow-lg shadow-indigo-100 hover:bg-indigo-700 transition-all disabled:opacity-50 flex items-center gap-2"
+                    >
+                      {submitting ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <>
+                          <Save className="w-4 h-4" />
+                          {t('common.save')}
+                        </>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
             </motion.div>
           </div>
         )}

@@ -20,13 +20,37 @@ class SuperAdminController {
     public function getStats() {
         $this->checkAccess();
         try {
+            // Obtener tamaño de la base de datos
+            $dbSize = Database::fetchOne("
+                SELECT SUM(data_length + index_length) / 1024 / 1024 AS size 
+                FROM information_schema.TABLES 
+                WHERE table_schema = DATABASE()
+            ")['size'];
+
             $stats = [
                 'total_tenants' => (int)Database::fetchOne("SELECT COUNT(*) as count FROM tenants")['count'],
                 'total_users'   => (int)Database::fetchOne("SELECT COUNT(*) as count FROM users WHERE is_super_admin = 0")['count'],
                 'total_projects'=> (int)Database::fetchOne("SELECT COUNT(*) as count FROM projects")['count'],
-                'total_hours'   => (float)Database::fetchOne("SELECT SUM(hours) as total FROM time_entries WHERE status = 'approved'")['total'],
+                'total_hours'   => (float)Database::fetchOne("SELECT SUM(hours) as total FROM time_entries")['total'],
+                'total_tasks'   => (int)Database::fetchOne("SELECT COUNT(*) as count FROM kanban_tasks")['count'],
+                'total_audit'   => (int)Database::fetchOne("
+                    SELECT (
+                        SELECT COUNT(*) FROM time_entry_logs
+                    ) + (
+                        SELECT COUNT(*) FROM audit_logs
+                    ) as count
+                ")['count'],
                 'entries_count' => (int)Database::fetchOne("SELECT COUNT(*) as count FROM time_entries")['count'],
                 'active_kanban' => (int)Database::fetchOne("SELECT COUNT(*) as count FROM kanban_tasks WHERE status != 'Done'")['count']
+            ];
+
+            $server_info = [
+                'php_version' => PHP_VERSION,
+                'memory_limit' => ini_get('memory_limit'),
+                'memory_usage' => round(memory_get_usage() / 1024 / 1024, 2) . ' MB',
+                'mysql_version' => Database::fetchOne("SELECT VERSION() as v")['v'],
+                'db_size' => round((float)$dbSize, 2) . ' MB',
+                'os' => PHP_OS
             ];
             
             // Actividad por tenant (Top 5)
@@ -41,7 +65,8 @@ class SuperAdminController {
 
             return Response::json([
                 'stats' => $stats,
-                'top_tenants' => $topTenants
+                'top_tenants' => $topTenants,
+                'server_info' => $server_info
             ]);
         } catch (\Throwable $e) {
             return Response::error($e->getMessage());
@@ -52,18 +77,13 @@ class SuperAdminController {
     public function listTenants() {
         $this->checkAccess();
         try {
-            // Traemos el logo desde system_config mediante un JOIN
-            $tenants = Database::fetchAll("
-                SELECT 
-                    t.*, 
-                    sc.logo_url,
-                    (SELECT COUNT(*) FROM users WHERE tenant_id = t.id) as users_count,
-                    (SELECT COUNT(*) FROM projects WHERE tenant_id = t.id) as projects_count
-                FROM tenants t
-                LEFT JOIN system_config sc ON t.id = sc.tenant_id
-                ORDER BY t.id DESC
-            ");
-            return Response::json($tenants);
+            $db = Database::connect();
+            $tenantRepo = new \App\Repositories\TenantRepository($db);
+            $userRepo = new \App\Repositories\UserRepository($db);
+            $tenantService = new \App\Services\TenantService($tenantRepo, $userRepo);
+
+            $result = $tenantService->listAll();
+            return Response::json($result['data']);
         } catch (\Throwable $e) {
             return Response::error("Error en listado: " . $e->getMessage());
         }
@@ -76,71 +96,35 @@ class SuperAdminController {
         
         try {
             $db = Database::connect();
+            $tenantRepo = new \App\Repositories\TenantRepository($db);
+            $userRepo = new \App\Repositories\UserRepository($db);
+            $tenantService = new \App\Services\TenantService($tenantRepo, $userRepo);
 
             if ($id) {
-                // ACTUALIZACIÓN BÁSICA O CAMBIO DE ESTADO
-                $sql = "UPDATE tenants SET name = ?, domain = ?, status = ? WHERE id = ?";
-                $params = [
-                    $body['name'] ?? '', 
-                    $body['domain'] ?? null, 
-                    $body['status'] ?? 'active', 
-                    $id
-                ];
-
-                // Si solo viene el estado (cambio rápido desde la grilla)
+                // Actualización o cambio de estado
                 if (count($body) <= 2 && isset($body['status'])) {
-                    $sql = "UPDATE tenants SET status = ? WHERE id = ?";
-                    $params = [$body['status'], $id];
+                    $result = $tenantService->toggleStatus($id, $body['status']);
+                } else {
+                    $tenantRepo->update(
+                        $id, 
+                        $body['name'] ?? '', 
+                        $body['domain'] ?? null, 
+                        $body['status'] ?? 'active'
+                    );
+                    $result = ['success' => true];
                 }
-
-                Database::query($sql, $params);
             } else {
-                // ALTA NUEVA EMPRESA (TRANSACCIONAL)
-                // ... (mantenemos la lógica de alta atómica anterior)
-                $adminEmail = $body['admin_email'] ?? '';
-                $existingTenant = Database::fetchOne("SELECT id FROM tenants WHERE name = ?", [$body['name']]);
-                if ($existingTenant) return Response::error("Ya existe una empresa con ese nombre.", 400);
-
-                $existingUser = Database::fetchOne("SELECT id FROM users WHERE email = ?", [$adminEmail]);
-                if ($existingUser) return Response::error("El email del administrador ya está en uso.", 400);
-
-                $db->beginTransaction();
-
-                Database::query("INSERT INTO tenants (name, domain, status) VALUES (?, ?, ?)", [
-                    $body['name'], $body['domain'] ?? null, $body['status'] ?? 'active'
-                ]);
-                $tenantId = $db->lastInsertId();
-
-                Database::query("
-                    INSERT INTO system_config 
-                    (tenant_id, company_name, logo_url, currency, primary_color, secondary_color, accent_color, sidebar_bg, sidebar_text, color_approved, color_submitted, color_rejected, color_draft) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                ", [
-                    $tenantId, $body['name'], $body['logo_url'] ?? null, $body['currency'] ?? 'USD',
-                    $body['primary_color'] ?? '#4f46e5', $body['secondary_color'] ?? '#0f172a',
-                    $body['accent_color'] ?? '#06b6d4', $body['sidebar_bg'] ?? '#f8fafc',
-                    $body['sidebar_text'] ?? '#334155', $body['color_approved'] ?? '#10b981',
-                    $body['color_submitted'] ?? '#f59e0b', $body['color_rejected'] ?? '#ef4444',
-                    $body['color_draft'] ?? '#94a3b8'
-                ]);
-
-                $passwordHash = password_hash($body['admin_password'] ?? '123456', PASSWORD_DEFAULT);
-                Database::query("
-                    INSERT INTO users (name, email, password, role, role_id, tenant_id, weekly_capacity, hourly_cost) 
-                    VALUES (?, ?, ?, 'admin', 1, ?, 40, 0)
-                ", [$body['admin_name'] ?? 'Admin', $adminEmail, $passwordHash, $tenantId]);
-
-                $features = ['dashboard', 'kanban', 'tracker', 'approvals', 'projects', 'clients', 'costs', 'report_heatmaps', 'report_audit', 'report_ai', 'report_custom', 'users', 'settings'];
-                foreach ($features as $f) {
-                    Database::query("INSERT INTO permissions (role_id, feature, can_access, tenant_id) VALUES (1, ?, 1, ?)", [$f, $tenantId]);
-                }
-
-                $db->commit();
+                // Alta transaccional mediante el servicio
+                $result = $tenantService->registerTenant($body);
             }
+
+            if (isset($result['success']) && !$result['success']) {
+                return Response::error($result['errors'][0] ?? "Error en la operación", $result['status'] ?? 400);
+            }
+
             return Response::json(['success' => true]);
         } catch (\Throwable $e) {
-            if (isset($db) && $db->inTransaction()) $db->rollBack();
-            return Response::error("Error en DB: " . $e->getMessage());
+            return Response::error("Error en proceso: " . $e->getMessage());
         }
     }
 
@@ -148,29 +132,19 @@ class SuperAdminController {
         $this->checkAccess();
         try {
             $db = Database::connect();
-            
-            // 1. REGLA DE NEGOCIO: No permitir borrar si tiene más de 1 usuario (el admin)
-            $userCount = (int)Database::fetchOne("SELECT COUNT(*) as c FROM users WHERE tenant_id = ?", [$id])['c'];
-            
-            if ($userCount > 1) {
-                return Response::error("No se puede eliminar la empresa: tiene {$userCount} usuarios activos. Solo se permiten borrar empresas sin actividad comercial.", 403);
+            $tenantRepo = new \App\Repositories\TenantRepository($db);
+            $userRepo = new \App\Repositories\UserRepository($db);
+            $tenantService = new \App\Services\TenantService($tenantRepo, $userRepo);
+
+            $result = $tenantService->removeTenant($id);
+
+            if (!$result['success']) {
+                return Response::error($result['errors'][0], $result['status']);
             }
-            
-            // 2. INICIO DE TRANSACCIÓN PARA BORRADO TOTAL (ROLLBACK DEL ALTA)
-            $db->beginTransaction();
-            
-            // Borrado en cascada manual de todas las dependencias creadas en el alta
-            Database::query("DELETE FROM system_config WHERE tenant_id = ?", [$id]);
-            Database::query("DELETE FROM permissions WHERE tenant_id = ?", [$id]);
-            Database::query("DELETE FROM users WHERE tenant_id = ?", [$id]);
-            Database::query("DELETE FROM tenants WHERE id = ?", [$id]);
-            
-            $db->commit();
             
             return Response::json(['success' => true]);
         } catch (\Throwable $e) {
-            if (isset($db) && $db->inTransaction()) $db->rollBack();
-            return Response::error("Error crítico al eliminar empresa: " . $e->getMessage());
+            return Response::error("Error crítico: " . $e->getMessage());
         }
     }
 
@@ -182,16 +156,46 @@ class SuperAdminController {
             $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
             $offset = ($page - 1) * $limit;
 
-            $total = Database::fetchOne("SELECT COUNT(*) as count FROM time_entry_logs")['count'];
+            $where = "WHERE 1=1";
+            $params = [];
+
+            if (!empty($_GET['tenant_id'])) {
+                $where .= " AND u.tenant_id = ?";
+                $params[] = $_GET['tenant_id'];
+            }
+            if (!empty($_GET['from_status'])) {
+                $where .= " AND l.from_status = ?";
+                $params[] = $_GET['from_status'];
+            }
+            if (!empty($_GET['to_status'])) {
+                $where .= " AND l.to_status = ?";
+                $params[] = $_GET['to_status'];
+            }
+            if (!empty($_GET['date_from'])) {
+                $where .= " AND DATE(l.created_at) >= ?";
+                $params[] = $_GET['date_from'];
+            }
+            if (!empty($_GET['date_to'])) {
+                $where .= " AND DATE(l.created_at) <= ?";
+                $params[] = $_GET['date_to'];
+            }
+
+            $total = Database::fetchOne("
+                SELECT COUNT(*) as count 
+                FROM time_entry_logs l
+                JOIN users u ON l.user_id = u.id
+                $where
+            ", $params)['count'];
             
             $logs = Database::fetchAll("
                 SELECT l.*, u.name as user_name, t.name as tenant_name
                 FROM time_entry_logs l
                 JOIN users u ON l.user_id = u.id
                 LEFT JOIN tenants t ON u.tenant_id = t.id
+                $where
                 ORDER BY l.created_at DESC
                 LIMIT $limit OFFSET $offset
-            ");
+            ", $params);
 
             return Response::json([
                 'data' => $logs,

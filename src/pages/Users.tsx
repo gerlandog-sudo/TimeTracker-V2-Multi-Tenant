@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Users as UsersIcon, UserPlus, Search, Filter, Edit2, Trash2, X, Shield, Mail, User, AlertTriangle, AlertCircle, DollarSign, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../lib/api';
@@ -31,6 +31,14 @@ const UsersPage: React.FC = () => {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<UserData | null>(null);
+  const firstInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      setTimeout(() => firstInputRef.current?.focus(), 100);
+    }
+  }, [isModalOpen]);
+
 
   // Pagination State
   const [pagination, setPagination] = useState({
@@ -392,6 +400,7 @@ const UsersPage: React.FC = () => {
                             <User className="w-3 h-3" /> {t('users.name')}
                           </label>
                           <input 
+                            ref={firstInputRef}
                             type="text" 
                             required
                             maxLength={200}

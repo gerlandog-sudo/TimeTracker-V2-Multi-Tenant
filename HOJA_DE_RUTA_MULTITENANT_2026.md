@@ -11,14 +11,17 @@ Este documento detalla el paso a paso para la transformación del paradigma mono
 - ✅ **Identificador Único**: Añadir `tenant_id` a todas las tablas del sistema.
 - ✅ **Filtro Automático**: Implementar `Context::getTenantFilter()` en el backend para restringir consultas.
 - ✅ **Migración de Datos**: Mecanismo de migración de tenants maestros operativo.
+- ✅ **Auditoría de Consistencia**: Sincronización de controladores y esquemas (Resuelto desajuste de roles/seniority).
 
 ## 3. Fase 2: Identificación y Seguridad
 - ✅ **Contexto de Sesión**: El JWT incluye el `tenant_id` del usuario logueado.
 - [ ] **Detección por Dominio**: Pendiente implementar lógica de host dinámico (`empresa.timetracker.com`).
 - ✅ **Validación de Cruce**: Restricción de acceso a recursos entre diferentes tenants completada.
+- ✅ **Blindaje de Backend**: Controladores de Usuarios, Proyectos, Clientes y Kanban auditados y blindados.
 
 ## 4. Fase 3: Personalización (White-Label)
 - ✅ **Configuración Dinámica**: Carga de logos, colores y marca blanca funcional.
+- ✅ **UX Profesional**: Implementación de auto-foco y modales premium integrados.
 - [ ] **Aislamiento de Archivos**: Pendiente estructurar `/uploads/{tenant_id}/`.
 - ✅ **Internacionalización (i18n)**: Soporte completo para 6 idiomas (ES_ar, ES_es, EN_us, EN_gb, PT_br, PT_pt).
 

@@ -25,13 +25,14 @@ class TimeEntriesController {
     public function list() {
         $user = Context::getUser();
         if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
 
         $limit  = isset($_GET['limit']) ? (int)$_GET['limit'] : null;
         $page   = (int)($_GET['page'] ?? 1);
         $offset = ($page - 1) * ($limit ?? 0);
 
-        $where  = "WHERE 1=1";
-        $params = [];
+        $where  = "WHERE t.tenant_id = ?";
+        $params = [$tenantId];
 
         if (($user['role'] ?? '') === 'staff' || ($user['role'] ?? '') === 'commercial') {
             $where .= " AND t.user_id = ?"; $params[] = $user['id'];
@@ -63,6 +64,7 @@ class TimeEntriesController {
     public function create() {
         $user = Context::getUser();
         if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
         $body = Request::getBody();
         $targetUserId = $user['id'];
 
@@ -72,15 +74,16 @@ class TimeEntriesController {
             return Response::error("El administrador debe especificar un usuario.", 400);
         }
 
-        $project = Database::fetchOne("SELECT status FROM projects WHERE id = ?", [$body['project_id'] ?? 0]);
+        $project = Database::fetchOne("SELECT status FROM projects WHERE id = ? AND tenant_id = ?", [$body['project_id'] ?? 0, $tenantId]);
         if (!$project || $project['status'] !== 'Activo') {
-            return Response::error("No se pueden imputar horas a un proyecto que no esté ACTIVO", 400);
+            return Response::error("No se pueden imputar horas a un proyecto que no esté ACTIVO o no pertenezca a tu empresa.", 400);
         }
 
-        Database::query("INSERT INTO time_entries (user_id, project_id, task_id, description, hours, date, status) VALUES (?, ?, ?, ?, ?, ?, ?)", [
+        Database::query("INSERT INTO time_entries (user_id, project_id, task_id, description, hours, date, status, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", [
             $targetUserId, $body['project_id'], $body['task_id'],
             $body['description'], $body['hours'], $body['date'],
-            $body['status'] ?? 'submitted'
+            $body['status'] ?? 'submitted',
+            $tenantId
         ]);
         $id = Database::connect()->lastInsertId();
         $this->logTransition($id, null, $body['status'] ?? 'submitted', $user['id'], 'Registro creado');
@@ -90,31 +93,33 @@ class TimeEntriesController {
     public function update() {
         $user = Context::getUser();
         if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
         $body = Request::getBody();
         $id   = $body['id'] ?? null;
         if (!$id) return Response::error("ID requerido", 400);
 
-        $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ?", [$id]);
+        $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$entry) return Response::error("No encontrado", 404);
 
         if ((int)$entry['user_id'] !== (int)$user['id'] && $user['role'] !== 'admin') return Response::error("Sin permisos", 403);
         if (!in_array($entry['status'], ['draft', 'pending', 'rejected']) && $user['role'] !== 'admin') return Response::error("Solo se pueden editar registros en estado Borrador o Rechazado", 400);
 
-        Database::query("UPDATE time_entries SET project_id = ?, task_id = ?, description = ?, hours = ?, date = ? WHERE id = ?",
-            [$body['project_id'], $body['task_id'], $body['description'], $body['hours'], $body['date'], $id]);
+        Database::query("UPDATE time_entries SET project_id = ?, task_id = ?, description = ?, hours = ?, date = ? WHERE id = ? AND tenant_id = ?",
+            [$body['project_id'], $body['task_id'], $body['description'], $body['hours'], $body['date'], $id, $tenantId]);
         return Response::json(['success' => true]);
     }
 
     public function submit($id) {
         $user = Context::getUser();
         if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
 
-        $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ?", [$id]);
+        $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$entry) return Response::error("No encontrado", 404);
         if ($entry['user_id'] != $user['id']) return Response::error("Sin permisos", 403);
         if (!in_array($entry['status'], ['draft', 'rejected'])) return Response::error("Estado inválido para envío", 400);
 
-        Database::query("UPDATE time_entries SET status = 'submitted', submitted_at = NOW() WHERE id = ?", [$id]);
+        Database::query("UPDATE time_entries SET status = 'submitted', submitted_at = NOW() WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         $this->logTransition($id, $entry['status'], 'submitted', $user['id'], 'Enviado para aprobación');
         return Response::json(['success' => true]);
     }
@@ -122,11 +127,12 @@ class TimeEntriesController {
     public function updateStatus($id) {
         $user = Context::getUser();
         if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
 
         $body      = Request::getBody();
         $newStatus = $body['status'] ?? '';
 
-        $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ?", [$id]);
+        $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$entry) return Response::error("No encontrado", 404);
         if (!in_array($newStatus, ['approved', 'rejected', 'draft'])) return Response::error("Estado inválido", 400);
 
@@ -136,8 +142,9 @@ class TimeEntriesController {
         if ($newStatus === 'approved')  $sql .= ", approved_at = NOW()";
         elseif ($newStatus === 'rejected') $sql .= ", rejected_at = NOW()";
 
-        $sql .= " WHERE id = ?";
+        $sql .= " WHERE id = ? AND tenant_id = ?";
         $params[] = $id;
+        $params[] = $tenantId;
         Database::query($sql, $params);
         $this->logTransition($id, $entry['status'], $newStatus, $user['id'], $body['comment'] ?? 'Cambio de estado');
 
@@ -149,6 +156,7 @@ class TimeEntriesController {
     public function bulkStatus() {
         $user = Context::getUser();
         if (!$user) return Response::error("Sin permisos", 403);
+        $tenantId = $user['tenant_id'];
         $body      = Request::getBody();
         $ids       = $body['ids'] ?? [];
         $newStatus = $body['status'] ?? '';
@@ -156,10 +164,10 @@ class TimeEntriesController {
         if (empty($ids) || !in_array($newStatus, ['approved', 'rejected'])) return Response::error("Parámetros inválidos", 400);
 
         foreach ($ids as $id) {
-            $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ?", [$id]);
+            $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
             if (!$entry || $entry['status'] !== 'submitted') continue;
-            $sql = "UPDATE time_entries SET status = ?, reviewed_by = ?, " . ($newStatus === 'approved' ? 'approved_at' : 'rejected_at') . " = NOW() WHERE id = ?";
-            Database::query($sql, [$newStatus, $user['id'], $id]);
+            $sql = "UPDATE time_entries SET status = ?, reviewed_by = ?, " . ($newStatus === 'approved' ? 'approved_at' : 'rejected_at') . " = NOW() WHERE id = ? AND tenant_id = ?";
+            Database::query($sql, [$newStatus, $user['id'], $id, $tenantId]);
             $this->logTransition($id, 'submitted', $newStatus, $user['id'], 'Aprobación masiva');
             $msg = "Tu registro del " . $entry['date'] . " ha sido " . ($newStatus === 'approved' ? 'APROBADO' : 'RECHAZADO');
             $this->createNotification($entry['user_id'], $msg, $newStatus === 'approved' ? 'success' : 'error');
@@ -170,14 +178,21 @@ class TimeEntriesController {
     public function delete($id) {
         $user = Context::getUser();
         if (!$user) return Response::error("No autenticado", 401);
-        $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ?", [$id]);
+        $tenantId = $user['tenant_id'];
+        $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$entry) return Response::error("No encontrado", 404);
         if ((int)$entry['user_id'] !== (int)$user['id'] && $user['role'] !== 'admin') return Response::error("Sin permisos", 403);
-        Database::query("DELETE FROM time_entries WHERE id = ?", [$id]);
+        Database::query("DELETE FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         return Response::json(['success' => true]);
     }
 
     public function getLogs($id) {
+        $user = Context::getUser();
+        if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
+        $exists = Database::fetchOne("SELECT id FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
+        if (!$exists) return Response::error("No encontrado", 404);
+
         return Response::json(Database::fetchAll("SELECT l.*, COALESCE(u.name, 'Sistema') as user_name FROM time_entry_logs l LEFT JOIN users u ON l.user_id = u.id WHERE l.time_entry_id = ? ORDER BY l.created_at DESC", [$id]));
     }
 }

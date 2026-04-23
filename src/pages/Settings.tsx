@@ -19,7 +19,7 @@ const Settings: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<'general' | 'permissions' | 'positions' | 'costs' | 'tasks'>('general');
   const [positions, setPositions] = useState<{id: number, name: string}[]>([]);
-  const [tasks, setTasks] = useState<{id: number, name: string, is_archived: number}[]>([]);
+  const [tasks, setTasks] = useState<{id: number, name: string}[]>([]);
   const [positionCosts, setPositionCosts] = useState<{id: number, position_id: number, position_name: string, seniority: string, hourly_cost: number}[]>([]);
   
   // Pagination State
@@ -31,11 +31,10 @@ const Settings: React.FC = () => {
   const [isPosModalOpen, setIsPosModalOpen] = useState(false);
   const [isCostModalOpen, setIsCostModalOpen] = useState(false);
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-  const [editingPos, setEditingPos] = useState<{id: number, name: string} | null>(null);
-  const [editingTask, setEditingTask] = useState<{id: number, name: string, is_archived: number} | null>(null);
+  const [editingTask, setEditingTask] = useState<{id: number, name: string} | null>(null);
   const [posName, setPosName] = useState('');
   const [taskName, setTaskName] = useState('');
-  const [taskIsArchived, setTaskIsArchived] = useState(false);
+  const [editingPos, setEditingPos] = useState<{id: number, name: string} | null>(null);
   const [savingPermissions, setSavingPermissions] = useState(false);
   const [confirmModal, setConfirmModal] = useState<{
     isOpen: boolean;
@@ -182,12 +181,11 @@ const Settings: React.FC = () => {
     setError(null);
     try {
       if (editingTask) {
-        await api.put('/tasks', { id: editingTask.id, name: taskName, is_archived: taskIsArchived });
+        await api.put('/tasks', { id: editingTask.id, name: taskName });
       } else {
-        await api.post('/tasks', { name: taskName, is_archived: taskIsArchived });
+        await api.post('/tasks', { name: taskName });
       }
       setTaskName('');
-      setTaskIsArchived(false);
       setEditingTask(null);
       setIsTaskModalOpen(false);
       fetchTasks();
@@ -198,15 +196,13 @@ const Settings: React.FC = () => {
     }
   };
 
-  const openTaskModal = (task: {id: number, name: string, is_archived: number} | null = null) => {
+  const openTaskModal = (task: {id: number, name: string} | null = null) => {
     if (task) {
       setEditingTask(task);
       setTaskName(task.name);
-      setTaskIsArchived(!!task.is_archived);
     } else {
       setEditingTask(null);
       setTaskName('');
-      setTaskIsArchived(false);
     }
     setIsTaskModalOpen(true);
   };
@@ -1082,7 +1078,7 @@ const Settings: React.FC = () => {
                   </tr>
                 ) : (
                   tasks.map(task => (
-                    <tr key={task.id} className={`hover:bg-gray-50/50 transition-colors ${task.is_archived ? 'opacity-60 bg-gray-50/30' : ''}`}>
+                    <tr key={task.id} className="hover:bg-gray-50/50 transition-colors">
                       <td className="px-6 py-4 text-sm text-gray-500 w-16">#{task.id}</td>
                       <td className="px-6 py-4 text-sm font-medium text-gray-900">
                         {task.name}
@@ -1149,18 +1145,6 @@ const Settings: React.FC = () => {
                       className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
                       placeholder="Ej: Desarrollo Frontend"
                     />
-                  </div>
-                  <div className="flex items-center gap-2 pt-2">
-                    <input 
-                      type="checkbox" 
-                      id="is_archived"
-                      checked={taskIsArchived}
-                      onChange={(e) => setTaskIsArchived(e.target.checked)}
-                      className="w-4 h-4 text-primary border-gray-300 rounded focus:ring-primary"
-                    />
-                    <label htmlFor="is_archived" className="text-sm font-medium text-gray-700 cursor-pointer">
-                      {t('config.archive_item', 'Archivar esta tarea')}
-                    </label>
                   </div>
                   <div className="pt-4 flex gap-3">
                     <button 

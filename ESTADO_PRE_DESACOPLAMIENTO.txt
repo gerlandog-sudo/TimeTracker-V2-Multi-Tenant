@@ -1,0 +1,43 @@
+================================================================================
+BREAKPOINT DE SEGURIDAD - TIMETRACKER V2 MULTI-TENANT
+================================================================================
+Fecha: 2026-04-23
+Versión: 2.01.031 (Estable / Despliegue Final)
+Estado: PRE-DESACOPLAMIENTO MODULAR
+--------------------------------------------------------------------------------
+
+1. ESTRUCTURA DE ARCHIVOS CRÍTICOS:
+---------------------------------
+- api/index.php: Enrutador centralizado (Monolito).
+- api/src/Controllers/: Contiene toda la lógica actual (10 controladores activos).
+- api/src/Core/: Núcleo de seguridad, base de datos y multi-tenant.
+- src/pages/: Pantallas de React (Login, Tracker, Settings, etc.) con auto-foco.
+- database/schema_master.sql: Plano oficial de la base de datos (11 tablas).
+
+2. ESTADO DEL BACKEND:
+---------------------
+- Multi-tenancy: Basado en Context::getTenantId() y filtrado por WHERE tenant_id.
+- Autenticación: JWT con validación de expiración y tenant_id embebido.
+- Sincronización: Compatibilidad total con columnas 'role' y 'seniority' como texto.
+
+3. ESTADO DEL FRONTEND:
+----------------------
+- Framework: Vite + React + TailwindCSS.
+- UI: Modales premium unificados, auto-foco en Login y formularios ABM.
+- i18n: Soporte para 6 idiomas (ES_ar, ES_es, EN_us, EN_gb, PT_br, PT_pt).
+
+4. BASE DE DATOS (ESQUEMA):
+--------------------------
+- Tablas: tenants, system_config, users, roles, permissions, clients, projects, 
+          time_entries, audit_logs, tasks_master, positions, position_costs,
+          kanban_tasks, notifications.
+
+5. GARANTÍA DE ROLLBACK:
+-----------------------
+- Directorio 'ready_for_deploy/': Contiene la "foto" exacta de lo que hay en el 
+  servidor hoy. Si algo falla en el código fuente (src/ o api/src/), el contenido 
+  de esta carpeta es su salvación inmediata para restaurar el servicio.
+
+================================================================================
+INVENTARIO CONSOLIDADO POR ANTIGRAVITY - NO ELIMINAR ESTE ARCHIVO
+================================================================================

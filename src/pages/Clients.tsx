@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Plus, UserCircle, Mail, Phone, MapPin, Loader2, Search, Trash2, AlertCircle, AlertTriangle, X, CheckSquare, Target, DollarSign, Briefcase } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../lib/api';
@@ -50,6 +50,21 @@ const Clients: React.FC = () => {
     tax_id: '',
     address: ''
   });
+  const firstInputRef = useRef<HTMLInputElement>(null);
+  const contactInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (view === 'detail' && activeTab === 'general') {
+      setTimeout(() => firstInputRef.current?.focus(), 100);
+    }
+  }, [view, activeTab]);
+
+  useEffect(() => {
+    if (isContactModalOpen) {
+      setTimeout(() => contactInputRef.current?.focus(), 100);
+    }
+  }, [isContactModalOpen]);
+
 
   const fetchClients = async () => {
     try {
@@ -404,6 +419,7 @@ const Clients: React.FC = () => {
                   <div className="md:col-span-2">
                     <label className="block text-sm font-semibold text-gray-700 mb-1">{t('clients.commercial_name')}</label>
                     <input 
+                      ref={firstInputRef}
                       required
                       type="text"
                       maxLength={200}
@@ -542,6 +558,7 @@ const Clients: React.FC = () => {
               <div>
                 <label className="block text-sm font-semibold text-gray-700 mb-1">{t('clients.contact_name')}</label>
                 <input 
+                  ref={contactInputRef}
                   required
                   type="text"
                   maxLength={200}

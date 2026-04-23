@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { LogIn, Loader2, X, Mail, Key, Check } from 'lucide-react';
 import api from '../lib/api';
@@ -23,6 +23,13 @@ const Login: React.FC = () => {
   
   const navigate = useNavigate();
   const { config, refreshConfig } = useTheme();
+  const emailRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setTimeout(() => {
+      emailRef.current?.focus();
+    }, 100);
+  }, []);
 
   const [tenantInfo, setTenantInfo] = useState<{ id: number, name: string } | null>(null);
   const [searchingTenant, setSearchingTenant] = useState(false);
@@ -130,6 +137,7 @@ const Login: React.FC = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">{t('login.email')}</label>
               <input
+                ref={emailRef}
                 type="email"
                 required
                 value={email}

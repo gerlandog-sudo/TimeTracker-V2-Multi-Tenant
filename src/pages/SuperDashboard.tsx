@@ -10,7 +10,12 @@ import {
   Layers,
   CheckCircle2,
   AlertCircle,
-  ArrowUpRight
+  ArrowUpRight,
+  Database,
+  Server,
+  Cpu,
+  FileText,
+  Layout
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import api from '../lib/api';
@@ -45,11 +50,20 @@ const SuperDashboard: React.FC = () => {
   const topTenants = data?.top_tenants || [];
 
   const cards = [
-    { title: t('super.total_tenants'), value: stats.total_tenants, icon: Globe, color: 'text-indigo-600', bg: 'bg-indigo-50' },
-    { title: t('super.total_users'), value: stats.total_users, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: t('super.total_projects'), value: stats.total_projects, icon: Briefcase, color: 'text-emerald-600', bg: 'bg-emerald-50' },
-    { title: t('super.total_hours'), value: Math.round(stats.total_hours || 0), icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { title: t('super.total_tenants', 'Empresas'), value: stats.total_tenants, icon: Globe, color: 'text-indigo-600', bg: 'bg-indigo-50' },
+    { title: t('super.total_users', 'Usuarios'), value: stats.total_users, icon: Users, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { title: t('super.total_projects', 'Proyectos'), value: stats.total_projects, icon: Briefcase, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { title: t('super.total_hours_usage', 'Uso Total Horas'), value: Math.round(stats.total_hours || 0), icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
+
+  const secondaryCards = [
+    { title: t('super.total_tasks', 'Total Tareas'), value: stats.total_tasks || 0, icon: Layout, color: 'text-purple-600', bg: 'bg-purple-50' },
+    { title: t('super.active_tasks', 'Tareas en Curso'), value: stats.active_kanban || 0, icon: Activity, color: 'text-orange-600', bg: 'bg-orange-50' },
+    { title: t('super.total_audit', 'Audit Logs'), value: stats.total_audit || 0, icon: FileText, color: 'text-rose-600', bg: 'bg-rose-50' },
+    { title: t('super.total_entries', 'Registros Tiempo'), value: stats.entries_count || 0, icon: Layers, color: 'text-cyan-600', bg: 'bg-cyan-50' },
+  ];
+
+  const serverInfo = data?.server_info || {};
 
   return (
     <div className="space-y-8 pb-12">
@@ -78,6 +92,29 @@ const SuperDashboard: React.FC = () => {
             </div>
             <h3 className="text-gray-500 text-sm font-medium">{card.title}</h3>
             <p className="text-3xl font-bold text-gray-900 mt-1">{card.value}</p>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* Secondary Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {secondaryCards.map((card, i) => (
+          <motion.div
+            key={card.title}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: (i + 4) * 0.1 }}
+            className="bg-white p-6 rounded-2xl border border-gray-50 shadow-sm hover:shadow-md transition-all group"
+          >
+            <div className="flex items-center gap-4">
+              <div className={`p-2.5 rounded-lg ${card.bg} ${card.color}`}>
+                <card.icon className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-gray-400 text-xs font-medium">{card.title}</h3>
+                <p className="text-xl font-bold text-gray-800">{card.value}</p>
+              </div>
+            </div>
           </motion.div>
         ))}
       </div>
@@ -122,31 +159,49 @@ const SuperDashboard: React.FC = () => {
         {/* Platform Status */}
         <div className="bg-white rounded-3xl border border-gray-100 shadow-sm p-6 flex flex-col">
           <h3 className="font-bold text-gray-900 mb-6 flex items-center gap-2">
-            <Activity className="w-5 h-5 text-emerald-500" /> {t('super.platform_status')}
+            <Server className="w-5 h-5 text-emerald-500" /> {t('super.server_telemetry', 'Telemetría del Servidor')}
           </h3>
-          <div className="space-y-6 flex-1">
+          <div className="space-y-4 flex-1">
+            <div className="p-4 bg-gray-50 rounded-2xl border border-gray-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Cpu className="w-4 h-4" />
+                  <span className="text-xs font-medium">{t('super.php_version')}</span>
+                </div>
+                <span className="text-xs font-bold text-gray-900">{serverInfo.php_version}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-gray-500">
+                  <Activity className="w-4 h-4" />
+                  <span className="text-xs font-medium">{t('super.memory_usage')}</span>
+                </div>
+                <span className="text-xs font-bold text-gray-900">{serverInfo.memory_usage} / {serverInfo.memory_limit}</span>
+              </div>
+            </div>
+
+            <div className="p-4 bg-indigo-50 rounded-2xl border border-indigo-100 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2 text-indigo-600">
+                  <Database className="w-4 h-4" />
+                  <span className="text-xs font-medium uppercase tracking-wider">{t('super.db_status')}</span>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-indigo-400 font-medium">{t('super.mysql_engine')}</span>
+                <span className="text-xs font-bold text-indigo-700">{serverInfo.mysql_version?.split('-')[0]}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-indigo-400 font-medium">{t('super.db_total_size')}</span>
+                <span className="text-xl font-black text-indigo-800">{serverInfo.db_size}</span>
+              </div>
+            </div>
+
             <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-2xl border border-emerald-100">
               <div className="flex items-center gap-3">
                 <CheckCircle2 className="w-5 h-5 text-emerald-600" />
-                <span className="text-sm font-bold text-emerald-900">{t('super.db_status')}</span>
+                <span className="text-sm font-bold text-emerald-900">{t('super.general_status')}</span>
               </div>
-              <span className="text-xs font-bold text-emerald-600 uppercase">{t('super.stable')}</span>
-            </div>
-            
-            <div className="flex items-center justify-between p-4 bg-blue-50 rounded-2xl border border-blue-100">
-              <div className="flex items-center gap-3">
-                <Layers className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-bold text-blue-900">{t('super.entries_count')}</span>
-              </div>
-              <span className="text-xs font-bold text-blue-600">{stats.entries_count}</span>
-            </div>
-
-            <div className="flex items-center justify-between p-4 bg-amber-50 rounded-2xl border border-amber-100">
-              <div className="flex items-center gap-3">
-                <AlertCircle className="w-5 h-5 text-amber-600" />
-                <span className="text-sm font-bold text-amber-900">{t('super.active_kanban')}</span>
-              </div>
-              <span className="text-xs font-bold text-amber-600">{stats.active_kanban}</span>
+              <span className="text-xs font-bold text-emerald-600 uppercase">{t('super.healthy')}</span>
             </div>
           </div>
           

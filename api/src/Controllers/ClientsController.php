@@ -45,17 +45,28 @@ class ClientsController {
 
     public function create() {
         $body = Request::getBody();
-        Database::query("INSERT INTO clients (name, legal_name, tax_id, address, tenant_id) VALUES (?, ?, ?, ?, ?)", [
-            $body['name'], $body['legal_name'] ?? null, $body['tax_id'] ?? null,
-            $body['address'] ?? null, Context::getTenantId()
+        Database::query("INSERT INTO clients (name, legal_name, tax_id, contact_name, contact_email, address, tenant_id) VALUES (?, ?, ?, ?, ?, ?, ?)", [
+            $body['name'], 
+            $body['legal_name'] ?? null, 
+            $body['tax_id'] ?? null,
+            $body['contact_name'] ?? null,
+            $body['contact_email'] ?? null,
+            $body['address'] ?? null, 
+            Context::getTenantId()
         ]);
         return Response::json(['success' => true, 'id' => Database::connect()->lastInsertId()]);
     }
 
     public function update() {
         $body = Request::getBody();
-        Database::query("UPDATE clients SET name = ?, legal_name = ?, tax_id = ?, address = ? WHERE id = ?", [
-            $body['name'], $body['legal_name'] ?? null, $body['tax_id'] ?? null, $body['address'] ?? null, $body['id']
+        Database::query("UPDATE clients SET name = ?, legal_name = ?, tax_id = ?, contact_name = ?, contact_email = ?, address = ? WHERE id = ?", [
+            $body['name'], 
+            $body['legal_name'] ?? null, 
+            $body['tax_id'] ?? null, 
+            $body['contact_name'] ?? null,
+            $body['contact_email'] ?? null,
+            $body['address'] ?? null, 
+            $body['id']
         ]);
         return Response::json(['success' => true]);
     }

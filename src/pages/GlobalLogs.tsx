@@ -8,9 +8,12 @@ import {
   User, 
   ArrowRight,
   RefreshCw,
-  Loader2
+  Loader2,
+  Filter,
+  Calendar,
+  X
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import api from '../lib/api';
 import { format } from 'date-fns';
 import { Pagination } from '../components/Pagination';
@@ -27,10 +30,35 @@ const GlobalLogs: React.FC = () => {
     totalPages: 0
   });
 
+  const [filters, setFilters] = useState({
+    date_from: '',
+    date_to: '',
+    tenant_id: '',
+    from_status: '',
+    to_status: ''
+  });
+
+  const [tenants, setTenants] = useState<any[]>([]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const fetchTenants = async () => {
+    try {
+      const res = await api.get('/super/tenants');
+      setTenants(res.data);
+    } catch (err) {
+      console.error('Error fetching tenants:', err);
+    }
+  };
+
   const fetchLogs = async (page = pagination.page) => {
     setLoading(true);
     try {
-      const response = await api.get(`/super/logs?page=${page}&limit=${pagination.limit}`);
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString(),
+        ...filters
+      });
+      const response = await api.get(`/super/logs?${queryParams.toString()}`);
       if (response.data && response.data.data) {
         setLogs(response.data.data);
         setPagination({
@@ -50,8 +78,23 @@ const GlobalLogs: React.FC = () => {
   };
 
   useEffect(() => {
+    fetchTenants();
+  }, []);
+
+  useEffect(() => {
     fetchLogs(pagination.page);
-  }, [pagination.page, pagination.limit]);
+  }, [pagination.page, pagination.limit, filters]);
+
+  const clearFilters = () => {
+    setFilters({
+      date_from: '',
+      date_to: '',
+      tenant_id: '',
+      from_status: '',
+      to_status: ''
+    });
+    setSearchTerm('');
+  };
 
   const filteredLogs = logs.filter(log => 
     log.user_name.toLowerCase().includes(searchTerm.toLowerCase()) || 
@@ -78,16 +121,120 @@ const GlobalLogs: React.FC = () => {
         </button>
       </div>
 
-      <div className="relative max-w-xl">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-        <input 
-          type="text"
-          placeholder={t('super.search_placeholder')}
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all shadow-sm"
-        />
+      <div className="flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 max-w-xl">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input 
+            type="text"
+            placeholder={t('super.search_placeholder')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all shadow-sm"
+          />
+        </div>
+        
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          className={`flex items-center gap-2 px-4 py-3 rounded-2xl border transition-all ${
+            showFilters ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+          }`}
+        >
+          <Filter className="w-5 h-5" />
+          <span className="text-sm font-semibold">{t('common.filters', 'Filtros')}</span>
+        </button>
+
+        {(Object.values(filters).some(v => v !== '') || searchTerm !== '') && (
+          <button 
+            onClick={clearFilters}
+            className="flex items-center gap-1 text-sm font-medium text-rose-500 hover:text-rose-600"
+          >
+            <X className="w-4 h-4" /> Limpiar
+          </button>
+        )}
       </div>
+
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div 
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            className="overflow-hidden"
+          >
+            <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Empresa</label>
+                <select 
+                  value={filters.tenant_id}
+                  onChange={(e) => setFilters(prev => ({ ...prev, tenant_id: e.target.value, page: 1 }))}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/10"
+                >
+                  <option value="">Todas las empresas</option>
+                  {tenants.map(t => (
+                    <option key={t.id} value={t.id}>{t.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Desde</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="date"
+                    value={filters.date_from}
+                    onChange={(e) => setFilters(prev => ({ ...prev, date_from: e.target.value }))}
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/10"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Hasta</label>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <input 
+                    type="date"
+                    value={filters.date_to}
+                    onChange={(e) => setFilters(prev => ({ ...prev, date_to: e.target.value }))}
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/10"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Estado Anterior</label>
+                <select 
+                  value={filters.from_status}
+                  onChange={(e) => setFilters(prev => ({ ...prev, from_status: e.target.value }))}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/10"
+                >
+                  <option value="">Cualquiera</option>
+                  <option value="draft">Draft</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-2">Estado Final</label>
+                <select 
+                  value={filters.to_status}
+                  onChange={(e) => setFilters(prev => ({ ...prev, to_status: e.target.value }))}
+                  className="w-full p-2.5 bg-gray-50 border border-gray-100 rounded-xl text-sm outline-none focus:ring-2 focus:ring-indigo-500/10"
+                >
+                  <option value="">Cualquiera</option>
+                  <option value="draft">Draft</option>
+                  <option value="submitted">Submitted</option>
+                  <option value="approved">Approved</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <div className="bg-white rounded-3xl border border-gray-100 shadow-xl overflow-hidden">
         <div className="overflow-x-auto">

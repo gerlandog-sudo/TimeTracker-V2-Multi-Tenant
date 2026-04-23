@@ -51,8 +51,10 @@ CREATE TABLE IF NOT EXISTS `users` (
   `email` varchar(100) NOT NULL,
   `password` varchar(255) NOT NULL,
   `role_id` int(11) DEFAULT 4,
+  `role` varchar(50) DEFAULT 'staff',
   `position_id` int(11) DEFAULT NULL,
   `seniority_id` int(11) DEFAULT NULL,
+  `seniority` varchar(50) DEFAULT NULL,
   `hourly_cost` decimal(15,2) DEFAULT 0.00,
   `weekly_capacity` decimal(5,2) DEFAULT 40.00,
   `language` varchar(10) DEFAULT 'es_AR',
@@ -183,6 +185,41 @@ CREATE TABLE IF NOT EXISTS `position_costs` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `idx_poscost_unique` (`position_id`,`seniority`,`tenant_id`),
   KEY `idx_poscost_tenant` (`tenant_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 10. KANBAN Y TAREAS (Operacional)
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `kanban_tasks` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `tenant_id` int(11) NOT NULL,
+  `project_id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `description` text NOT NULL,
+  `priority` varchar(20) DEFAULT 'Baja',
+  `task_type_id` int(11) DEFAULT NULL,
+  `estimated_hours` decimal(5,2) DEFAULT '0.00',
+  `status` varchar(20) DEFAULT 'ToDo',
+  `started_at` datetime DEFAULT NULL,
+  `completed_at` datetime DEFAULT NULL,
+  `created_by` int(11) DEFAULT NULL,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_kanban_tenant` (`tenant_id`),
+  KEY `idx_kanban_project` (`project_id`),
+  KEY `idx_kanban_user` (`user_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 11. NOTIFICACIONES
+-- --------------------------------------------------------
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) NOT NULL,
+  `message` text NOT NULL,
+  `type` varchar(50) DEFAULT 'info',
+  `is_read` tinyint(1) DEFAULT 0,
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_notify_user` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 COMMIT;

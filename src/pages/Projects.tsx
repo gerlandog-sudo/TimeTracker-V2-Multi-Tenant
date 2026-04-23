@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Plus, Briefcase, Target, DollarSign, Loader2, Filter, Trash2, AlertCircle, AlertTriangle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../lib/api';
@@ -39,6 +39,14 @@ const Projects: React.FC = () => {
     budget_money: '',
     status: 'Activo'
   });
+  const firstInputRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    if (isModalOpen) {
+      setTimeout(() => firstInputRef.current?.focus(), 100);
+    }
+  }, [isModalOpen]);
+
 
   const fetchData = async () => {
     try {
@@ -327,6 +335,7 @@ const Projects: React.FC = () => {
                     ? setEditingProject({...editingProject, client_id: e.target.value})
                     : setNewProject({...newProject, client_id: e.target.value})
                   }
+                  ref={firstInputRef}
                   className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"
                 >
                   <option value="">{t('projects.select_client')}</option>

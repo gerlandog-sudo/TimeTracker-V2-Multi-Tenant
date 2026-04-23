@@ -22,6 +22,15 @@ const TimeTracker: React.FC = () => {
   const [loadingLogs, setLoadingLogs] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
+  const projectSelectRef = useRef<HTMLSelectElement>(null);
+
+  useEffect(() => {
+    // Foco inicial al cargar para registro rápido
+    if (!editingId) {
+      setTimeout(() => projectSelectRef.current?.focus(), 500);
+    }
+  }, [editingId]);
+
 
   // Pagination State
   const [pagination, setPagination] = useState({
@@ -240,6 +249,7 @@ const TimeTracker: React.FC = () => {
               <div>
                 <label className="block text-xs font-semibold text-gray-500 uppercase mb-1">{t('tracker.project')}</label>
                 <select 
+                  ref={projectSelectRef}
                   value={newEntry.project_id}
                   onChange={(e) => setNewEntry({...newEntry, project_id: e.target.value})}
                   className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:ring-2 focus:ring-primary/20 outline-none"

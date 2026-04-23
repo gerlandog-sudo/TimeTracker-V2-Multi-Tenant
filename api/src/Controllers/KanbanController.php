@@ -11,14 +11,15 @@ class KanbanController {
     public function list() {
         $user = Context::getUser();
         if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
 
         $sql    = "SELECT kt.*, p.name as project_name, u.name as user_name, tm.name as task_type_name
                    FROM kanban_tasks kt
                    JOIN projects p ON kt.project_id = p.id
                    JOIN users u ON kt.user_id = u.id
                    LEFT JOIN tasks_master tm ON kt.task_type_id = tm.id
-                   WHERE 1=1";
-        $params = [];
+                   WHERE kt.tenant_id = ?";
+        $params = [$tenantId];
 
         $isManager = (($user['role'] ?? '') === 'admin' || ($user['role_id'] ?? 99) <= 2);
         if (!$isManager) {
@@ -34,22 +35,26 @@ class KanbanController {
 
     public function create() {
         $user = Context::getUser();
+        if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
         $body = Request::getBody();
         $isManager   = (($user['role'] ?? '') === 'admin' || ($user['role_id'] ?? 99) <= 2);
         $targetUserId= $isManager && isset($body['user_id']) ? $body['user_id'] : $user['id'];
 
-        Database::query("INSERT INTO kanban_tasks (project_id, user_id, description, priority, task_type_id, estimated_hours, status, created_by) VALUES (?, ?, ?, ?, ?, ?, 'ToDo', ?)", [
+        Database::query("INSERT INTO kanban_tasks (project_id, user_id, description, priority, task_type_id, estimated_hours, status, created_by, tenant_id) VALUES (?, ?, ?, ?, ?, ?, 'ToDo', ?, ?)", [
             $body['project_id'], $targetUserId, $body['description'],
             $body['priority'] ?? 'Baja', $body['task_type_id'] ?? null,
-            $body['estimated_hours'] ?? 0, $user['id']
+            $body['estimated_hours'] ?? 0, $user['id'], $tenantId
         ]);
         return Response::json(['success' => true, 'id' => Database::connect()->lastInsertId()]);
     }
 
     public function update($id) {
         $user = Context::getUser();
+        if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
         $body = Request::getBody();
-        $task = Database::fetchOne("SELECT * FROM kanban_tasks WHERE id = ?", [$id]);
+        $task = Database::fetchOne("SELECT * FROM kanban_tasks WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$task) return Response::error("No encontrado", 404);
 
         $isManager = (($user['role'] ?? '') === 'admin' || ($user['role_id'] ?? 99) <= 2);
@@ -66,22 +71,24 @@ class KanbanController {
             $completed_at = date('Y-m-d H:i:s');
         }
 
-        Database::query("UPDATE kanban_tasks SET project_id = ?, description = ?, priority = ?, task_type_id = ?, estimated_hours = ?, status = ?, started_at = ?, completed_at = ? WHERE id = ?", [
+        Database::query("UPDATE kanban_tasks SET project_id = ?, description = ?, priority = ?, task_type_id = ?, estimated_hours = ?, status = ?, started_at = ?, completed_at = ? WHERE id = ? AND tenant_id = ?", [
             $body['project_id'] ?? $task['project_id'], $body['description'] ?? $task['description'],
             $body['priority'] ?? $task['priority'], $body['task_type_id'] ?? $task['task_type_id'],
             $body['estimated_hours'] ?? $task['estimated_hours'],
-            $newStatus, $started_at, $completed_at, $id
+            $newStatus, $started_at, $completed_at, $id, $tenantId
         ]);
         return Response::json(['success' => true]);
     }
 
     public function delete($id) {
         $user = Context::getUser();
-        $task = Database::fetchOne("SELECT user_id, created_by FROM kanban_tasks WHERE id = ?", [$id]);
+        if (!$user) return Response::error("No autenticado", 401);
+        $tenantId = $user['tenant_id'];
+        $task = Database::fetchOne("SELECT user_id, created_by FROM kanban_tasks WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$task) return Response::error("No encontrado", 404);
         $isManager = (($user['role'] ?? '') === 'admin' || ($user['role_id'] ?? 99) <= 2);
         if (!$isManager && $task['user_id'] != $user['id'] && $task['created_by'] != $user['id']) return Response::error("Sin permisos", 403);
-        Database::query("DELETE FROM kanban_tasks WHERE id = ?", [$id]);
+        Database::query("DELETE FROM kanban_tasks WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         return Response::json(['success' => true]);
     }
 }

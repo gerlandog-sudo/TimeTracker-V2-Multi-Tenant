@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useTheme } from '../context/ThemeContext';
 import { 
   Plus, 
@@ -103,8 +103,23 @@ const KanbanPage: React.FC = () => {
   const [editingTask, setEditingTask] = useState<KanbanTask | null>(null);
   const [showConfirmDoneModal, setShowConfirmDoneModal] = useState(false);
   const [selectedTaskForDone, setSelectedTaskForDone] = useState<KanbanTask | null>(null);
-  const [doneHours, setDoneHours] = useState('0.00');
   const [doneDescription, setDoneDescription] = useState('');
+  
+  const newTaskRef = useRef<HTMLSelectElement>(null);
+  const editTaskRef = useRef<HTMLSelectElement>(null);
+  const doneHoursRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (showNewTaskModal) setTimeout(() => newTaskRef.current?.focus(), 100);
+  }, [showNewTaskModal]);
+
+  useEffect(() => {
+    if (showEditTaskModal) setTimeout(() => editTaskRef.current?.focus(), 100);
+  }, [showEditTaskModal]);
+
+  useEffect(() => {
+    if (showConfirmDoneModal) setTimeout(() => doneHoursRef.current?.focus(), 100);
+  }, [showConfirmDoneModal]);
   
   const [filters, setFilters] = useState({
     user_id: '',
@@ -554,7 +569,13 @@ const KanbanPage: React.FC = () => {
                       <div className="space-y-3">
                         <div>
                           <label className="block text-[10px] font-black text-gray-400 uppercase mb-0.5">{t('kanban.project_label')}</label>
-                          <select name="project_id" defaultValue="" required className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs bg-gray-50">
+                          <select 
+                            ref={newTaskRef}
+                            name="project_id" 
+                            defaultValue="" 
+                            required 
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs bg-gray-50"
+                          >
                             <option value="" disabled>{t('common.select')}</option>
                             {projects.map(p => (
                               <option key={p.id} value={p.id}>{p.name}</option>
@@ -669,7 +690,13 @@ const KanbanPage: React.FC = () => {
                       <div className="space-y-3">
                         <div>
                           <label className="block text-[10px] font-black text-gray-400 uppercase mb-0.5">{t('kanban.project_label')}</label>
-                          <select name="project_id" defaultValue={editingTask.project_id} required className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs bg-gray-50">
+                          <select 
+                            ref={editTaskRef}
+                            name="project_id" 
+                            defaultValue={editingTask.project_id} 
+                            required 
+                            className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:outline-none focus:ring-2 focus:ring-primary/20 text-xs bg-gray-50"
+                          >
                             {projects.map(p => (
                               <option key={p.id} value={p.id}>{p.name}</option>
                             ))}
@@ -857,6 +884,7 @@ const KanbanPage: React.FC = () => {
                       <div className="relative group">
                          <Clock className="absolute left-4 top-1/2 -translate-y-1/2 w-6 h-6 text-gray-300 group-focus-within:text-primary transition-colors" />
                          <input 
+                            ref={doneHoursRef}
                             type="number" 
                             step="0.5"
                             value={doneHours}
