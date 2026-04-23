@@ -10,32 +10,32 @@ Este documento detalla el paso a paso para la transformación del paradigma mono
 ## 2. Fase 1: Capa de Datos (Aislamiento)
 - [x] **Identificador Único**: Añadir `tenant_id` a todas las tablas del sistema.
 - [x] **Filtro Automático**: Implementar `Context::getTenantFilter()` en el backend para restringir consultas.
-- [ ] **Migración de Datos**: Script para asignar el `tenant_id = 1` a todos los datos existentes (Legacy Migration).
+- [x] **Migración de Datos**: Mecanismo de migración de tenants maestros operativo.
 
 ## 3. Fase 2: Identificación y Seguridad
-- [x] **Contexto de Sesión**: El JWT debe incluir el `tenant_id` del usuario logueado.
-- [ ] **Detección por Dominio**: Implementar lógica en `index.php` para identificar el tenant mediante el host (`$_SERVER['HTTP_HOST']`).
-- [x] **Validación de Cruce**: Impedir mediante código que un usuario de un tenant acceda a recursos de otro.
+- [x] **Contexto de Sesión**: El JWT incluye el `tenant_id` del usuario logueado.
+- [ ] **Detección por Dominio**: Pendiente implementar lógica de host dinámico (`empresa.timetracker.com`).
+- [x] **Validación de Cruce**: Restricción de acceso a recursos entre diferentes tenants completada.
 
 ## 4. Fase 3: Personalización (White-Label)
-- [x] **Configuración Dinámica**: Cargar `logo_url`, `primary_color` y `company_name` desde la tabla `tenants_config`.
-- [ ] **Aislamiento de Archivos**: Estructurar la carpeta `/uploads` como `/uploads/{tenant_id}/`.
-- [x] **Internacionalización (i18n)**: Soporte para 6 idiomas con carga dinámica según preferencia del tenant.
+- [x] **Configuración Dinámica**: Carga de logos, colores y marca blanca funcional.
+- [ ] **Aislamiento de Archivos**: Pendiente estructurar `/uploads/{tenant_id}/`.
+- [x] **Internacionalización (i18n)**: Soporte completo para 6 idiomas (ES_ar, ES_es, EN_us, EN_gb, PT_br, PT_pt).
 
 ## 5. Fase 4: Super Administrador (Control Maestro)
-- [x] **Dashboard Global**: Vista de métricas de todos los clientes.
-- [x] **Gestor de Tenants**: Crear, editar y suspender empresas.
-- [x] **Auditoría Global**: Registro de acciones críticas en toda la plataforma.
+- [x] **Dashboard Global**: Vista de métricas consolidadas.
+- [x] **Gestor de Tenants**: ABM de empresas y suscripciones operativo.
+- [x] **Auditoría Global**: Sistema de logs paginado y funcional para control maestro.
 
 ## 6. Fase 5: Modularización IA
-- [x] **Motor Gemini**: Integración modular para insights predictivos.
-- [x] **Simulación de Costos**: Módulo de IA para predicción de rentabilidad por perfil.
-- [ ] **Activación por Plan**: Lógica para habilitar/deshabilitar IA según el contrato del tenant.
+- [x] **Motor Gemini**: Integración modular con el SDK oficial.
+- [x] **Simulación de Costos**: Módulo de predicción IA por perfil funcional.
+- [ ] **Activación por Plan**: Pendiente lógica de habilitación de módulos IA según contrato.
 
 ## 7. Fase 6: Desacoplamiento y Microservicios
-- [x] **API First**: El frontend no tiene lógica de negocio, solo consume endpoints.
-- [ ] **Service Discovery**: Implementar un gestor de servicios para escalar módulos pesados (IA/Reportes) en servidores dedicados.
-- [ ] **Event-Driven**: Migrar la auditoría y notificaciones a un sistema basado en eventos para no bloquear el hilo principal de ejecución.
+- [x] **API First**: Separación total entre Frontend (React) y Backend (PHP).
+- [ ] **Service Discovery**: Pendiente gestor de servicios escalables.
+- [ ] **Event-Driven**: Pendiente migración a arquitectura basada en eventos para notificaciones.
 
 ---
 *Documento de Estrategia - TimeTracker V2 Modular Architecture & Microservices (rev. 2026)*
