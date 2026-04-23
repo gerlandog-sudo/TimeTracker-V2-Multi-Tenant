@@ -165,7 +165,8 @@ const TenantsList: React.FC = () => {
   const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
   const currentTenants = filteredTenants.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
 
-  const toggleStatus = async (tenant: any) => {
+  const toggleStatus = async (e: React.MouseEvent, tenant: any) => {
+    e.stopPropagation(); // Evitar que se abra el modal de edición
     const states = ['active', 'paused', 'suspended'];
     const currentIndex = states.indexOf(tenant.status);
     const nextStatus = states[(currentIndex + 1) % states.length];
@@ -235,14 +236,18 @@ const TenantsList: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {currentTenants.map((tenant) => (
-                <tr key={tenant.id} className="hover:bg-gray-50/50 transition-colors group">
+                <tr 
+                  key={tenant.id} 
+                  onClick={() => handleOpenModal(tenant)}
+                  className="hover:bg-gray-50/50 transition-colors group cursor-pointer"
+                >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100/50">
+                      <div className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 shadow-inner">
                         {tenant.logo_url ? (
-                          <img src={tenant.logo_url} alt="" className="w-full h-full object-contain" />
+                          <img src={tenant.logo_url} alt="" className="w-full h-full object-contain p-1" />
                         ) : (
-                          <Building2 className="w-5 h-5 text-indigo-400" />
+                          <Building2 className="w-5 h-5 text-gray-300" />
                         )}
                       </div>
                       <div>
@@ -257,7 +262,7 @@ const TenantsList: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex justify-center">
                       <button 
-                        onClick={() => toggleStatus(tenant)}
+                        onClick={(e) => toggleStatus(e, tenant)}
                         className={`p-2 rounded-xl transition-all active:scale-90 hover:shadow-md ${
                           tenant.status === 'active' ? 'bg-emerald-50' : 
                           tenant.status === 'paused' ? 'bg-amber-50' : 'bg-rose-50'
@@ -279,14 +284,14 @@ const TenantsList: React.FC = () => {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button 
-                        onClick={() => handleOpenModal(tenant)}
+                        onClick={(e) => { e.stopPropagation(); handleOpenModal(tenant); }}
                         className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
                         title="Editar Configuración"
                       >
                         <ShieldCheck className="w-5 h-5" />
                       </button>
                       <button 
-                        onClick={() => handleDelete(tenant.id)}
+                        onClick={(e) => { e.stopPropagation(); handleDelete(tenant.id); }}
                         disabled={Number(tenant.users_count) > 1}
                         className={`p-2 rounded-xl transition-all ${
                           Number(tenant.users_count) > 1 
@@ -339,71 +344,71 @@ const TenantsList: React.FC = () => {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-white rounded-[2rem] w-full max-w-4xl overflow-hidden shadow-2xl my-8 border border-gray-100"
+              className="bg-white rounded-[1.5rem] w-full max-w-3xl overflow-hidden shadow-2xl my-4 border border-gray-100"
             >
               {/* Header con gradiente sutil */}
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50/50 to-white sticky top-0 z-10 backdrop-blur-md">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-200">
-                    <Building2 className="w-6 h-6" />
+              <div className="p-4 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50/50 to-white sticky top-0 z-10 backdrop-blur-md">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-200">
+                    <Building2 className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-black text-gray-900 leading-tight">
-                      {formData.id ? 'Editar Configuración' : 'Nueva Empresa'}
+                    <h3 className="text-lg font-black text-gray-900 leading-tight">
+                      {formData.id ? 'Configuración' : 'Nueva Empresa'}
                     </h3>
-                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">
+                    <p className="text-[9px] text-gray-400 uppercase font-bold tracking-widest">
                       {formData.id ? `ID: ${formData.id}` : 'Registro de nuevo Tenant'}
                     </p>
                   </div>
                 </div>
                 <button 
                   onClick={() => setModalOpen(false)} 
-                  className="text-gray-400 hover:text-red-500 bg-white p-2 rounded-full shadow-sm hover:shadow-md transition-all active:scale-90"
+                  className="text-gray-400 hover:text-red-500 bg-white p-1.5 rounded-full shadow-sm hover:shadow-md transition-all active:scale-90"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-4 h-4" />
                 </button>
               </div>
               
-              <form onSubmit={handleSave} className="p-8 space-y-8 bg-white">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+              <form onSubmit={handleSave} className="p-6 space-y-6 bg-white">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   
                   {/* COLUMNA IZQUIERDA: EMPRESA E IDENTIDAD */}
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     {/* Grupo 1: Datos Base */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
-                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Información General</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-1 h-1 rounded-full bg-indigo-500"></span>
+                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">General</h4>
                       </div>
-                      <div className="grid grid-cols-1 gap-4">
+                      <div className="grid grid-cols-1 gap-3">
                         <div className="group">
-                          <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1 transition-colors group-focus-within:text-indigo-600">{t('super.tenant_name')}</label>
+                          <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('super.tenant_name')}</label>
                           <input 
                             required
                             type="text"
                             value={formData.name}
                             onChange={(e) => setFormData({...formData, name: e.target.value})}
-                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium"
-                            placeholder="Ej: Acme Corporation"
+                            className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-xs font-medium"
+                            placeholder="Nombre de Empresa"
                           />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('super.domain')}</label>
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('super.domain')}</label>
                             <input 
                               type="text"
                               value={formData.domain}
                               onChange={(e) => setFormData({...formData, domain: e.target.value})}
-                              className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium"
+                              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-xs font-medium"
                               placeholder="acme.pmaas.com"
                             />
                           </div>
                           <div>
-                            <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('super.status')}</label>
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('super.status')}</label>
                             <select 
                               value={formData.status}
                               onChange={(e) => setFormData({...formData, status: e.target.value})}
-                              className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium appearance-none"
+                              className="w-full px-4 py-2.5 bg-gray-50 border border-gray-100 rounded-xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-xs font-medium appearance-none"
                             >
                               <option value="active">Activa</option>
                               <option value="paused">Pausada</option>
@@ -414,41 +419,41 @@ const TenantsList: React.FC = () => {
                     </div>
 
                     {/* Grupo 2: Marca Blanca */}
-                    <div className="space-y-4 pt-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
-                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Identidad Visual</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-1 h-1 rounded-full bg-cyan-500"></span>
+                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Identidad</h4>
                       </div>
                       
-                      <div className="p-5 bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-[1.5rem] space-y-5">
-                        <div className="grid grid-cols-3 gap-4">
-                          <div className="space-y-2 text-center">
-                            <label className="block text-[9px] font-black text-gray-400 uppercase">Primario</label>
-                            <input type="color" value={formData.primary_color} onChange={(e) => setFormData({...formData, primary_color: e.target.value})} className="h-12 w-12 rounded-full cursor-pointer border-4 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
+                      <div className="p-4 bg-gray-50 border border-gray-100 rounded-[1rem] space-y-4">
+                        <div className="grid grid-cols-3 gap-2">
+                          <div className="space-y-1.5 text-center">
+                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-tighter">Primario</label>
+                            <input type="color" value={formData.primary_color} onChange={(e) => setFormData({...formData, primary_color: e.target.value})} className="h-9 w-9 rounded-full cursor-pointer border-2 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
                           </div>
-                          <div className="space-y-2 text-center">
-                            <label className="block text-[9px] font-black text-gray-400 uppercase">Secundario</label>
-                            <input type="color" value={formData.secondary_color} onChange={(e) => setFormData({...formData, secondary_color: e.target.value})} className="h-12 w-12 rounded-full cursor-pointer border-4 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
+                          <div className="space-y-1.5 text-center">
+                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-tighter">Secundario</label>
+                            <input type="color" value={formData.secondary_color} onChange={(e) => setFormData({...formData, secondary_color: e.target.value})} className="h-9 w-9 rounded-full cursor-pointer border-2 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
                           </div>
-                          <div className="space-y-2 text-center">
-                            <label className="block text-[9px] font-black text-gray-400 uppercase">Acento</label>
-                            <input type="color" value={formData.accent_color} onChange={(e) => setFormData({...formData, accent_color: e.target.value})} className="h-12 w-12 rounded-full cursor-pointer border-4 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
+                          <div className="space-y-1.5 text-center">
+                            <label className="block text-[8px] font-black text-gray-400 uppercase tracking-tighter">Acento</label>
+                            <input type="color" value={formData.accent_color} onChange={(e) => setFormData({...formData, accent_color: e.target.value})} className="h-9 w-9 rounded-full cursor-pointer border-2 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
                           </div>
                         </div>
                         
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-xl">
-                            <div className="w-6 h-6 rounded-md shadow-inner" style={{backgroundColor: formData.sidebar_bg}}></div>
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="flex items-center gap-2.5 p-2 bg-white border border-gray-100 rounded-lg">
+                            <div className="w-5 h-5 rounded shadow-inner" style={{backgroundColor: formData.sidebar_bg}}></div>
                             <div className="flex-1">
-                              <label className="block text-[9px] font-bold text-gray-400 uppercase">Sidebar</label>
-                              <input type="text" value={formData.sidebar_bg} onChange={(e) => setFormData({...formData, sidebar_bg: e.target.value})} className="w-full text-[10px] font-mono outline-none border-none p-0" />
+                              <label className="block text-[8px] font-bold text-gray-400 uppercase">Sidebar</label>
+                              <input type="text" value={formData.sidebar_bg} onChange={(e) => setFormData({...formData, sidebar_bg: e.target.value})} className="w-full text-[9px] font-mono outline-none border-none p-0" />
                             </div>
                           </div>
-                          <div className="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-xl">
-                            <div className="w-6 h-6 rounded-md shadow-inner" style={{backgroundColor: formData.sidebar_text}}></div>
+                          <div className="flex items-center gap-2.5 p-2 bg-white border border-gray-100 rounded-lg">
+                            <div className="w-5 h-5 rounded shadow-inner" style={{backgroundColor: formData.sidebar_text}}></div>
                             <div className="flex-1">
-                              <label className="block text-[9px] font-bold text-gray-400 uppercase">Texto Sidebar</label>
-                              <input type="text" value={formData.sidebar_text} onChange={(e) => setFormData({...formData, sidebar_text: e.target.value})} className="w-full text-[10px] font-mono outline-none border-none p-0" />
+                              <label className="block text-[8px] font-bold text-gray-400 uppercase">Texto</label>
+                              <input type="text" value={formData.sidebar_text} onChange={(e) => setFormData({...formData, sidebar_text: e.target.value})} className="w-full text-[9px] font-mono outline-none border-none p-0" />
                             </div>
                           </div>
                         </div>
@@ -457,75 +462,72 @@ const TenantsList: React.FC = () => {
                   </div>
 
                   {/* COLUMNA DERECHA: LOGO Y ADMIN */}
-                  <div className="space-y-8">
+                  <div className="space-y-6">
                     
                     {/* Grupo 3: Logo */}
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="w-1.5 h-1.5 rounded-full bg-pink-500"></span>
-                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Imagen Corporativa</h4>
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="w-1 h-1 rounded-full bg-pink-500"></span>
+                        <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Branding</h4>
                       </div>
-                      <div className="flex flex-col items-center gap-4 p-8 bg-indigo-50/30 border border-dashed border-indigo-200 rounded-[2rem] text-center group hover:bg-indigo-50/50 transition-all">
+                      <div className="flex flex-col items-center gap-3 p-6 bg-indigo-50/20 border border-dashed border-indigo-100 rounded-[1.5rem] text-center">
                         <div className="relative">
-                          <div className="w-24 h-24 bg-white rounded-3xl border-4 border-white shadow-xl flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
+                          <div className="w-20 h-20 bg-white rounded-2xl border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
                             {formData.logo_url ? (
                               <img src={formData.logo_url} alt="Preview" className="w-full h-full object-contain" />
                             ) : (
-                              <Building2 className="w-10 h-10 text-indigo-200" />
+                              <Building2 className="w-8 h-8 text-indigo-100" />
                             )}
                           </div>
-                          <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-indigo-700 active:scale-90 transition-all">
-                            <Plus className="w-4 h-4" />
+                          <label className="absolute -bottom-1.5 -right-1.5 w-7 h-7 bg-indigo-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-indigo-700 transition-all">
+                            <Plus className="w-3.5 h-3.5" />
                             <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
                           </label>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-indigo-900 mb-1">Logo de la Empresa</p>
-                          <p className="text-[10px] text-indigo-400 font-medium">Recomendado: SVG o PNG (512x512px)</p>
-                        </div>
+                        <p className="text-[9px] text-indigo-400 font-bold uppercase tracking-wider">Logo de Empresa</p>
                       </div>
                     </div>
 
                     {/* Grupo 4: Administrador Initial */}
                     {!formData.id && (
-                      <div className="space-y-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                          <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Acceso Maestro</h4>
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
+                          <h4 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em]">Admin</h4>
                         </div>
-                        <div className="p-6 bg-emerald-50/30 border border-emerald-100 rounded-[2rem] space-y-4">
+                        <div className="p-4 bg-emerald-50/20 border border-emerald-100 rounded-[1.5rem] space-y-3">
                           <div>
-                            <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('users.name')}</label>
+                            <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('users.name')}</label>
                             <input 
                               required={!formData.id}
                               type="text"
                               value={formData.admin_name}
                               onChange={(e) => setFormData({...formData, admin_name: e.target.value})}
-                              className="w-full px-5 py-3 bg-white border border-emerald-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 outline-none transition-all text-sm font-medium"
-                              placeholder="Nombre del Admin"
+                              className="w-full px-4 py-2 bg-white border border-emerald-100 rounded-xl outline-none text-xs font-medium"
+                              placeholder="Nombre"
                             />
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                             <div>
-                              <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('users.email')}</label>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('users.email')}</label>
                               <input 
                                 required={!formData.id}
                                 type="email"
                                 value={formData.admin_email}
                                 onChange={(e) => setFormData({...formData, admin_email: e.target.value})}
-                                className="w-full px-5 py-3 bg-white border border-emerald-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 outline-none transition-all text-sm font-medium"
-                                placeholder="email@dominio.com"
+                                className="w-full px-4 py-2 bg-white border border-emerald-100 rounded-xl outline-none text-xs font-medium"
+                                placeholder="email"
                               />
                             </div>
                             <div>
-                              <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('users.password')}</label>
+                              <label className="block text-[10px] font-bold text-gray-500 uppercase mb-1 ml-1">{t('users.password')}</label>
                               <input 
                                 required={!formData.id}
                                 type="password"
                                 value={formData.admin_password}
                                 onChange={(e) => setFormData({...formData, admin_password: e.target.value})}
-                                className="w-full px-5 py-3 bg-white border border-emerald-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 outline-none transition-all text-sm font-medium"
-                                placeholder="••••••••"
+                                className="w-full px-4 py-2 bg-white border border-emerald-100 rounded-xl outline-none text-xs font-medium"
+                                placeholder="••••"
                               />
                             </div>
                           </div>
@@ -536,23 +538,23 @@ const TenantsList: React.FC = () => {
                 </div>
                 
                 {/* Footer del Modal */}
-                <div className="pt-8 flex gap-4 sticky bottom-0 bg-white">
+                <div className="pt-4 flex gap-3 sticky bottom-0 bg-white">
                   <button 
                     type="button"
                     onClick={() => setModalOpen(false)}
-                    className="flex-1 py-4 px-6 border border-gray-100 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all active:scale-95"
+                    className="flex-1 py-3 px-4 border border-gray-100 rounded-xl font-black text-[10px] uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-all active:scale-95"
                   >
                     {t('common.cancel')}
                   </button>
                   <button 
                     type="submit"
                     disabled={submitting}
-                    className="flex-[2] py-4 px-6 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-2xl shadow-indigo-200 active:scale-95"
+                    className="flex-[2] py-3 px-4 bg-indigo-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xl shadow-indigo-200 active:scale-95"
                   >
                     {submitting ? (
-                      <Loader2 className="w-5 h-5 animate-spin" />
+                      <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
-                      <ShieldCheck className="w-5 h-5" />
+                      <ShieldCheck className="w-4 h-4" />
                     )}
                     {formData.id ? t('common.save') : t('super.add_tenant')}
                   </button>

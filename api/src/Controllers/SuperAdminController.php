@@ -52,19 +52,17 @@ class SuperAdminController {
     public function listTenants() {
         $this->checkAccess();
         try {
-            // Intentamos una consulta más simple primero para evitar errores de columnas calculadas
+            // Traemos el logo desde system_config mediante un JOIN
             $tenants = Database::fetchAll("
-                SELECT t.*
-                FROM tenants t 
+                SELECT 
+                    t.*, 
+                    sc.logo_url,
+                    (SELECT COUNT(*) FROM users WHERE tenant_id = t.id) as users_count,
+                    (SELECT COUNT(*) FROM projects WHERE tenant_id = t.id) as projects_count
+                FROM tenants t
+                LEFT JOIN system_config sc ON t.id = sc.tenant_id
                 ORDER BY t.id DESC
             ");
-            
-            // Enriquecemos con conteos de forma segura
-            foreach ($tenants as &$tenant) {
-                $tenant['users_count'] = (int)Database::fetchOne("SELECT COUNT(*) as c FROM users WHERE tenant_id = ?", [$tenant['id']])['c'];
-                $tenant['projects_count'] = (int)Database::fetchOne("SELECT COUNT(*) as c FROM projects WHERE tenant_id = ?", [$tenant['id']])['c'];
-            }
-
             return Response::json($tenants);
         } catch (\Throwable $e) {
             return Response::error("Error en listado: " . $e->getMessage());
