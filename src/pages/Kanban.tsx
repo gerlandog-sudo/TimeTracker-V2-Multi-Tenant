@@ -364,20 +364,6 @@ const KanbanPage: React.FC = () => {
           <p className="text-gray-500">{t('kanban.subtitle')}</p>
         </div>
         <div className="flex items-center gap-3">
-          <label className="flex items-center gap-2 cursor-pointer group p-2 bg-white rounded-xl border border-gray-100 hover:border-primary/30 transition-all shadow-sm">
-            <div className="relative">
-              <input 
-                type="checkbox" 
-                className="sr-only peer"
-                checked={showArchivedTasks}
-                onChange={(e) => setShowArchivedTasks(e.target.checked)}
-              />
-              <div className="w-10 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
-            </div>
-            <span className="text-xs font-bold text-gray-400 uppercase tracking-wider group-hover:text-primary transition-colors">
-              {t('config.show_archived_column', 'Ver Columna Archivo')}
-            </span>
-          </label>
           <button 
             onClick={() => setShowNewTaskModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-medium whitespace-nowrap"
@@ -414,6 +400,21 @@ const KanbanPage: React.FC = () => {
             </select>
           </div>
         )}
+
+        <label className="flex items-center gap-2 cursor-pointer group p-2 pr-4 bg-gray-50 rounded-xl border border-gray-200 hover:border-primary/30 transition-all shadow-sm">
+          <div className="relative">
+            <input 
+              type="checkbox" 
+              className="sr-only peer"
+              checked={showArchivedTasks}
+              onChange={(e) => setShowArchivedTasks(e.target.checked)}
+            />
+            <div className="w-10 h-5 bg-gray-200 peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-primary"></div>
+          </div>
+          <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest group-hover:text-primary transition-colors">
+            {t('config.show_archived_column', 'Ver Columna Archivo')}
+          </span>
+        </label>
       </div>
 
       {/* Kanban Board */}

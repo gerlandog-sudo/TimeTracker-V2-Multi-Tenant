@@ -126,11 +126,6 @@ const Dashboard: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('dashboard.title')}</h1>
           <p className="text-gray-500">{t('dashboard.subtitle')}</p>
         </div>
-        {config.logo_url && (
-          <div className="h-12 flex items-center">
-            <img src={config.logo_url} alt={config.company_name} className="h-full w-auto object-contain" referrerPolicy="no-referrer" />
-          </div>
-        )}
       </div>
 
       {/* Filters */}
