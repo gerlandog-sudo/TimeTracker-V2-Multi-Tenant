@@ -262,170 +262,224 @@ const TenantsList: React.FC = () => {
         {isModalOpen && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
             <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-white rounded-3xl w-full max-w-2xl overflow-hidden shadow-2xl my-8"
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[2rem] w-full max-w-4xl overflow-hidden shadow-2xl my-8 border border-gray-100"
             >
-              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-indigo-50/50 sticky top-0 z-10 backdrop-blur-md">
-                <h3 className="text-lg font-bold text-gray-900">{formData.id ? 'Editar Empresa' : 'Nueva Empresa'}</h3>
-                <button onClick={() => setModalOpen(false)} className="text-gray-400 hover:text-gray-600 bg-white p-1 rounded-full shadow-sm">
+              {/* Header con gradiente sutil */}
+              <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gradient-to-r from-indigo-50/50 to-white sticky top-0 z-10 backdrop-blur-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-lg shadow-indigo-200">
+                    <Building2 className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-black text-gray-900 leading-tight">
+                      {formData.id ? 'Editar Configuración' : 'Nueva Empresa'}
+                    </h3>
+                    <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">
+                      {formData.id ? `ID: ${formData.id}` : 'Registro de nuevo Tenant'}
+                    </p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setModalOpen(false)} 
+                  className="text-gray-400 hover:text-red-500 bg-white p-2 rounded-full shadow-sm hover:shadow-md transition-all active:scale-90"
+                >
                   <X className="w-5 h-5" />
                 </button>
               </div>
               
-              <form onSubmit={handleSave} className="p-8 space-y-8">
-                {/* Sección 1: Datos de Empresa */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                    <Building2 className="w-5 h-5 text-indigo-500" />
-                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Datos de la Empresa</h4>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t('super.tenant_name')}</label>
-                      <input 
-                        required
-                        type="text"
-                        value={formData.name}
-                        onChange={(e) => setFormData({...formData, name: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm"
-                        placeholder="Ej: Acme Corp"
-                      />
+              <form onSubmit={handleSave} className="p-8 space-y-8 bg-white">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+                  
+                  {/* COLUMNA IZQUIERDA: EMPRESA E IDENTIDAD */}
+                  <div className="space-y-8">
+                    {/* Grupo 1: Datos Base */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Información General</h4>
+                      </div>
+                      <div className="grid grid-cols-1 gap-4">
+                        <div className="group">
+                          <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1 transition-colors group-focus-within:text-indigo-600">{t('super.tenant_name')}</label>
+                          <input 
+                            required
+                            type="text"
+                            value={formData.name}
+                            onChange={(e) => setFormData({...formData, name: e.target.value})}
+                            className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium"
+                            placeholder="Ej: Acme Corporation"
+                          />
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('super.domain')}</label>
+                            <input 
+                              type="text"
+                              value={formData.domain}
+                              onChange={(e) => setFormData({...formData, domain: e.target.value})}
+                              className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium"
+                              placeholder="acme.pmaas.com"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('super.status')}</label>
+                            <select 
+                              value={formData.status}
+                              onChange={(e) => setFormData({...formData, status: e.target.value})}
+                              className="w-full px-5 py-3.5 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500/50 outline-none transition-all text-sm font-medium appearance-none"
+                            >
+                              <option value="active">Activa</option>
+                              <option value="paused">Pausada</option>
+                            </select>
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t('super.domain')}</label>
-                      <input 
-                        type="text"
-                        value={formData.domain}
-                        onChange={(e) => setFormData({...formData, domain: e.target.value})}
-                        className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm"
-                        placeholder="acme.timetracker.com"
-                      />
+
+                    {/* Grupo 2: Marca Blanca */}
+                    <div className="space-y-4 pt-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-cyan-500"></span>
+                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Identidad Visual</h4>
+                      </div>
+                      
+                      <div className="p-5 bg-gradient-to-br from-gray-50 to-white border border-gray-100 rounded-[1.5rem] space-y-5">
+                        <div className="grid grid-cols-3 gap-4">
+                          <div className="space-y-2 text-center">
+                            <label className="block text-[9px] font-black text-gray-400 uppercase">Primario</label>
+                            <input type="color" value={formData.primary_color} onChange={(e) => setFormData({...formData, primary_color: e.target.value})} className="h-12 w-12 rounded-full cursor-pointer border-4 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
+                          </div>
+                          <div className="space-y-2 text-center">
+                            <label className="block text-[9px] font-black text-gray-400 uppercase">Secundario</label>
+                            <input type="color" value={formData.secondary_color} onChange={(e) => setFormData({...formData, secondary_color: e.target.value})} className="h-12 w-12 rounded-full cursor-pointer border-4 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
+                          </div>
+                          <div className="space-y-2 text-center">
+                            <label className="block text-[9px] font-black text-gray-400 uppercase">Acento</label>
+                            <input type="color" value={formData.accent_color} onChange={(e) => setFormData({...formData, accent_color: e.target.value})} className="h-12 w-12 rounded-full cursor-pointer border-4 border-white shadow-sm block mx-auto transition-transform hover:scale-110" />
+                          </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-xl">
+                            <div className="w-6 h-6 rounded-md shadow-inner" style={{backgroundColor: formData.sidebar_bg}}></div>
+                            <div className="flex-1">
+                              <label className="block text-[9px] font-bold text-gray-400 uppercase">Sidebar</label>
+                              <input type="text" value={formData.sidebar_bg} onChange={(e) => setFormData({...formData, sidebar_bg: e.target.value})} className="w-full text-[10px] font-mono outline-none border-none p-0" />
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-3 p-3 bg-white border border-gray-100 rounded-xl">
+                            <div className="w-6 h-6 rounded-md shadow-inner" style={{backgroundColor: formData.sidebar_text}}></div>
+                            <div className="flex-1">
+                              <label className="block text-[9px] font-bold text-gray-400 uppercase">Texto Sidebar</label>
+                              <input type="text" value={formData.sidebar_text} onChange={(e) => setFormData({...formData, sidebar_text: e.target.value})} className="w-full text-[10px] font-mono outline-none border-none p-0" />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                  <div>
-                    <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t('super.status')}</label>
-                    <select 
-                      value={formData.status}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
-                      className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm"
-                    >
-                      <option value="active">Activa</option>
-                      <option value="paused">Pausada</option>
-                    </select>
+
+                  {/* COLUMNA DERECHA: LOGO Y ADMIN */}
+                  <div className="space-y-8">
+                    
+                    {/* Grupo 3: Logo */}
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-pink-500"></span>
+                        <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Imagen Corporativa</h4>
+                      </div>
+                      <div className="flex flex-col items-center gap-4 p-8 bg-indigo-50/30 border border-dashed border-indigo-200 rounded-[2rem] text-center group hover:bg-indigo-50/50 transition-all">
+                        <div className="relative">
+                          <div className="w-24 h-24 bg-white rounded-3xl border-4 border-white shadow-xl flex items-center justify-center overflow-hidden transition-transform group-hover:scale-105">
+                            {formData.logo_url ? (
+                              <img src={formData.logo_url} alt="Preview" className="w-full h-full object-contain" />
+                            ) : (
+                              <Building2 className="w-10 h-10 text-indigo-200" />
+                            )}
+                          </div>
+                          <label className="absolute -bottom-2 -right-2 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center cursor-pointer shadow-lg hover:bg-indigo-700 active:scale-90 transition-all">
+                            <Plus className="w-4 h-4" />
+                            <input type="file" accept="image/*" onChange={handleLogoUpload} className="hidden" />
+                          </label>
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-indigo-900 mb-1">Logo de la Empresa</p>
+                          <p className="text-[10px] text-indigo-400 font-medium">Recomendado: SVG o PNG (512x512px)</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Grupo 4: Administrador Initial */}
+                    {!formData.id && (
+                      <div className="space-y-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                          <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em]">Acceso Maestro</h4>
+                        </div>
+                        <div className="p-6 bg-emerald-50/30 border border-emerald-100 rounded-[2rem] space-y-4">
+                          <div>
+                            <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('users.name')}</label>
+                            <input 
+                              required={!formData.id}
+                              type="text"
+                              value={formData.admin_name}
+                              onChange={(e) => setFormData({...formData, admin_name: e.target.value})}
+                              className="w-full px-5 py-3 bg-white border border-emerald-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 outline-none transition-all text-sm font-medium"
+                              placeholder="Nombre del Admin"
+                            />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('users.email')}</label>
+                              <input 
+                                required={!formData.id}
+                                type="email"
+                                value={formData.admin_email}
+                                onChange={(e) => setFormData({...formData, admin_email: e.target.value})}
+                                className="w-full px-5 py-3 bg-white border border-emerald-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 outline-none transition-all text-sm font-medium"
+                                placeholder="email@dominio.com"
+                              />
+                            </div>
+                            <div>
+                              <label className="block text-[11px] font-bold text-gray-500 uppercase mb-1.5 ml-1">{t('users.password')}</label>
+                              <input 
+                                required={!formData.id}
+                                type="password"
+                                value={formData.admin_password}
+                                onChange={(e) => setFormData({...formData, admin_password: e.target.value})}
+                                className="w-full px-5 py-3 bg-white border border-emerald-100 rounded-2xl focus:ring-4 focus:ring-emerald-500/10 focus:border-emerald-500/50 outline-none transition-all text-sm font-medium"
+                                placeholder="••••••••"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                {/* Sección 2: Identidad Visual */}
-                <div className="space-y-4">
-                  <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                    <ShieldCheck className="w-5 h-5 text-indigo-500" />
-                    <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Identidad Visual</h4>
-                  </div>
-                  <div className="flex items-center gap-6 p-4 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
-                    <div className="w-20 h-20 bg-white rounded-xl border border-gray-100 flex items-center justify-center overflow-hidden shadow-inner">
-                      {formData.logo_url ? (
-                        <img src={formData.logo_url} alt="Preview" className="w-full h-full object-contain" />
-                      ) : (
-                        <Building2 className="w-8 h-8 text-gray-200" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <label className="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-tighter">Logo Corporativo</label>
-                      <input 
-                        type="file" 
-                        accept="image/*"
-                        onChange={handleLogoUpload}
-                        className="text-xs text-gray-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-bold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 cursor-pointer"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('config.primary')}</label>
-                      <div className="flex gap-2">
-                        <input type="color" value={formData.primary_color} onChange={(e) => setFormData({...formData, primary_color: e.target.value})} className="h-10 w-10 rounded-lg cursor-pointer border-none bg-transparent" />
-                        <input type="text" value={formData.primary_color} onChange={(e) => setFormData({...formData, primary_color: e.target.value})} className="flex-1 text-xs font-mono px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('config.secondary')}</label>
-                      <div className="flex gap-2">
-                        <input type="color" value={formData.secondary_color} onChange={(e) => setFormData({...formData, secondary_color: e.target.value})} className="h-10 w-10 rounded-lg cursor-pointer border-none bg-transparent" />
-                        <input type="text" value={formData.secondary_color} onChange={(e) => setFormData({...formData, secondary_color: e.target.value})} className="flex-1 text-xs font-mono px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg" />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('config.accent')}</label>
-                      <div className="flex gap-2">
-                        <input type="color" value={formData.accent_color} onChange={(e) => setFormData({...formData, accent_color: e.target.value})} className="h-10 w-10 rounded-lg cursor-pointer border-none bg-transparent" />
-                        <input type="text" value={formData.accent_color} onChange={(e) => setFormData({...formData, accent_color: e.target.value})} className="flex-1 text-xs font-mono px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Sección 3: Administrador Inicial (Solo para alta) */}
-                {!formData.id && (
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-2 pb-2 border-b border-gray-100">
-                      <Users className="w-5 h-5 text-indigo-500" />
-                      <h4 className="font-bold text-gray-900 text-sm uppercase tracking-wider">Administrador Inicial</h4>
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="md:col-span-2">
-                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t('users.name')}</label>
-                        <input 
-                          required={!formData.id}
-                          type="text"
-                          value={formData.admin_name}
-                          onChange={(e) => setFormData({...formData, admin_name: e.target.value})}
-                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm"
-                          placeholder="Nombre completo"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t('users.email')}</label>
-                        <input 
-                          required={!formData.id}
-                          type="email"
-                          value={formData.admin_email}
-                          onChange={(e) => setFormData({...formData, admin_email: e.target.value})}
-                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm"
-                          placeholder="admin@empresa.com"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-xs font-bold text-gray-400 uppercase mb-1.5">{t('users.password')}</label>
-                        <input 
-                          required={!formData.id}
-                          type="password"
-                          value={formData.admin_password}
-                          onChange={(e) => setFormData({...formData, admin_password: e.target.value})}
-                          className="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 outline-none text-sm"
-                          placeholder="••••••••"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
                 
+                {/* Footer del Modal */}
                 <div className="pt-8 flex gap-4 sticky bottom-0 bg-white">
                   <button 
                     type="button"
                     onClick={() => setModalOpen(false)}
-                    className="flex-1 py-3 px-4 border border-gray-200 rounded-2xl font-black text-xs uppercase tracking-widest text-gray-400 hover:bg-gray-50 transition-all"
+                    className="flex-1 py-4 px-6 border border-gray-100 rounded-2xl font-black text-xs uppercase tracking-[0.2em] text-gray-400 hover:bg-gray-50 hover:text-gray-600 transition-all active:scale-95"
                   >
                     {t('common.cancel')}
                   </button>
                   <button 
                     type="submit"
                     disabled={submitting}
-                    className="flex-1 py-3 px-4 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-indigo-700 transition-all flex items-center justify-center gap-2 disabled:opacity-50 shadow-xl shadow-indigo-200 active:scale-95"
+                    className="flex-[2] py-4 px-6 bg-indigo-600 text-white rounded-2xl font-black text-xs uppercase tracking-[0.2em] hover:bg-indigo-700 transition-all flex items-center justify-center gap-3 disabled:opacity-50 shadow-2xl shadow-indigo-200 active:scale-95"
                   >
-                    {submitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                    {submitting ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <ShieldCheck className="w-5 h-5" />
+                    )}
                     {formData.id ? t('common.save') : t('super.add_tenant')}
                   </button>
                 </div>
