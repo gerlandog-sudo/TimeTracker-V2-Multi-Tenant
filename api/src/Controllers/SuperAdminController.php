@@ -149,22 +149,30 @@ class SuperAdminController {
     public function deleteTenant($id) {
         $this->checkAccess();
         try {
-            // REGLA DE NEGOCIO: No permitir borrar si tiene más de 1 usuario (el admin)
+            $db = Database::connect();
+            
+            // 1. REGLA DE NEGOCIO: No permitir borrar si tiene más de 1 usuario (el admin)
             $userCount = (int)Database::fetchOne("SELECT COUNT(*) as c FROM users WHERE tenant_id = ?", [$id])['c'];
             
             if ($userCount > 1) {
                 return Response::error("No se puede eliminar la empresa: tiene {$userCount} usuarios activos. Solo se permiten borrar empresas sin actividad comercial.", 403);
             }
             
-            // Si tiene 1 o 0 usuarios, procedemos con el borrado en cascada manual de config y permisos para mantener limpia la DB
+            // 2. INICIO DE TRANSACCIÓN PARA BORRADO TOTAL (ROLLBACK DEL ALTA)
+            $db->beginTransaction();
+            
+            // Borrado en cascada manual de todas las dependencias creadas en el alta
             Database::query("DELETE FROM system_config WHERE tenant_id = ?", [$id]);
             Database::query("DELETE FROM permissions WHERE tenant_id = ?", [$id]);
             Database::query("DELETE FROM users WHERE tenant_id = ?", [$id]);
             Database::query("DELETE FROM tenants WHERE id = ?", [$id]);
             
+            $db->commit();
+            
             return Response::json(['success' => true]);
         } catch (\Throwable $e) {
-            return Response::error("Error al eliminar: " . $e->getMessage());
+            if (isset($db) && $db->inTransaction()) $db->rollBack();
+            return Response::error("Error crítico al eliminar empresa: " . $e->getMessage());
         }
     }
 
