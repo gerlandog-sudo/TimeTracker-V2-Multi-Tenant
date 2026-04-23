@@ -3,9 +3,9 @@
 Este documento detalla el paso a paso para la transformación del paradigma monolítico de TimeTracker hacia una plataforma SaaS (Software as a Service) modular y escalable.
 
 ## 1. Cambio de Paradigma: Del Monolito a Micro-Servicios
-- **Infraestructura Actual**: Transición de una aplicación "todo-en-uno" hacia un Backend desacoplado (API REST) y un Frontend independiente (SPA).
-- **Aislamiento de Lógica**: Cada controlador en `api/src/Controllers` está diseñado para funcionar como un módulo autónomo, facilitando su futura migración a microservicios reales (Node.js, Go o contenedores independientes).
-- **Servicios Externos**: Integración modular de servicios de IA y procesamiento de datos.
+- [x] **Infraestructura Desacoplada**: Transición completada de aplicación "todo-en-uno" hacia Backend (API REST) y Frontend (SPA) independientes.
+- [x] **Aislamiento de Lógica**: Controladores autónomos en `api/src/Controllers` listos para escalado independiente.
+- [x] **Servicios Externos**: Integración exitosa de servicios de IA (Gemini) como módulos desacoplados.
 
 ## 2. Fase 1: Capa de Datos (Aislamiento)
 - [x] **Identificador Único**: Añadir `tenant_id` a todas las tablas del sistema.
