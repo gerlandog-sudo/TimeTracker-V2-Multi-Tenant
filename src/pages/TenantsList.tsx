@@ -159,6 +159,35 @@ const TenantsList: React.FC = () => {
     t.domain?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+  const totalPages = Math.ceil(filteredTenants.length / itemsPerPage);
+  const currentTenants = filteredTenants.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+  const toggleStatus = async (tenant: any) => {
+    const states = ['active', 'paused', 'suspended'];
+    const currentIndex = states.indexOf(tenant.status);
+    const nextStatus = states[(currentIndex + 1) % states.length];
+    
+    try {
+      await api.post('/super/tenants', { id: tenant.id, status: nextStatus });
+      notifySuccess(`Estado de ${tenant.name} cambiado a ${nextStatus}`);
+      fetchTenants();
+    } catch (error: any) {
+      notifyError('Error al cambiar estado');
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return <PlayCircle className="w-5 h-5 text-emerald-500" />;
+      case 'paused': return <PauseCircle className="w-5 h-5 text-amber-500" />;
+      case 'suspended': return <X className="w-5 h-5 text-rose-500" />;
+      default: return <PlayCircle className="w-5 h-5 text-gray-400" />;
+    }
+  };
+
   if (loading) return (
     <div className="flex items-center justify-center h-64">
       <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -186,75 +215,120 @@ const TenantsList: React.FC = () => {
           type="text"
           placeholder={t('super.search_placeholder')}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
           className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm"
         />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredTenants.map((tenant) => (
-          <motion.div 
-            key={tenant.id}
-            layout
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col group hover:shadow-md transition-all border-l-4 border-l-indigo-500"
-          >
-            <div className="p-6 flex-1">
-              <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center overflow-hidden">
-                  {tenant.logo_url ? (
-                    <img src={tenant.logo_url} alt={tenant.name} className="w-full h-full object-contain" />
-                  ) : (
-                    <Building2 className="w-7 h-7" />
-                  )}
-                </div>
-                <div className="flex gap-2">
-                  <span className={`px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider ${
-                    tenant.status === 'active' ? 'bg-emerald-50 text-emerald-600' : 'bg-amber-50 text-amber-600'
-                  }`}>
-                    {tenant.status}
-                  </span>
-                </div>
-              </div>
-              
-              <h3 className="text-lg font-bold text-gray-900 mb-1">{tenant.name}</h3>
-              <p className="text-xs text-gray-400 font-mono mb-4 flex items-center gap-1">
-                <Globe className="w-3 h-3" /> {tenant.domain || 'Sin dominio asignado'}
-              </p>
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">{t('super.tenant_name')}</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest">Dominio</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{t('super.status')}</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{t('super.users')}</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-center">{t('reports.projects')}</th>
+                <th className="px-6 py-4 text-[10px] font-black text-gray-400 uppercase tracking-widest text-right">{t('common.actions')}</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-50">
+              {currentTenants.map((tenant) => (
+                <tr key={tenant.id} className="hover:bg-gray-50/50 transition-colors group">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center overflow-hidden border border-indigo-100/50">
+                        {tenant.logo_url ? (
+                          <img src={tenant.logo_url} alt="" className="w-full h-full object-contain" />
+                        ) : (
+                          <Building2 className="w-5 h-5 text-indigo-400" />
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm font-bold text-gray-900">{tenant.name}</p>
+                        <p className="text-[10px] text-gray-400 font-medium">ID: {tenant.id}</p>
+                      </div>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-500 font-mono italic">
+                    {tenant.domain || '---'}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex justify-center">
+                      <button 
+                        onClick={() => toggleStatus(tenant)}
+                        className={`p-2 rounded-xl transition-all active:scale-90 hover:shadow-md ${
+                          tenant.status === 'active' ? 'bg-emerald-50' : 
+                          tenant.status === 'paused' ? 'bg-amber-50' : 'bg-rose-50'
+                        }`}
+                        title="Click para rotar estado"
+                      >
+                        {getStatusIcon(tenant.status)}
+                      </button>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <span className="px-2.5 py-1 bg-gray-100 text-gray-600 rounded-lg text-xs font-bold">
+                      {tenant.users_count}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center text-sm font-bold text-gray-600">
+                    {tenant.projects_count}
+                  </td>
+                  <td className="px-6 py-4">
+                    <div className="flex items-center justify-end gap-2">
+                      <button 
+                        onClick={() => handleOpenModal(tenant)}
+                        className="p-2 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                        title="Editar Configuración"
+                      >
+                        <ShieldCheck className="w-5 h-5" />
+                      </button>
+                      <button 
+                        onClick={() => handleDelete(tenant.id)}
+                        disabled={Number(tenant.users_count) > 1}
+                        className={`p-2 rounded-xl transition-all ${
+                          Number(tenant.users_count) > 1 
+                          ? 'text-gray-200 cursor-not-allowed' 
+                          : 'text-gray-400 hover:text-red-500 hover:bg-red-50'
+                        }`}
+                        title={Number(tenant.users_count) > 1 ? 'No se puede eliminar: tiene usuarios' : 'Eliminar Empresa'}
+                      >
+                        <Trash2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
 
-              <div className="grid grid-cols-2 gap-4 pt-4 border-t border-gray-50">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-semibold text-gray-700">{tenant.users_count}</span>
-                  <span className="text-xs text-gray-400">{t('super.users')}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Briefcase className="w-4 h-4 text-gray-400" />
-                  <span className="text-sm font-semibold text-gray-700">{tenant.projects_count}</span>
-                  <span className="text-xs text-gray-400">{t('reports.projects')}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="px-6 py-4 bg-gray-50 flex items-center justify-between">
+        {/* Paginación */}
+        {totalPages > 1 && (
+          <div className="px-6 py-4 bg-gray-50/50 border-t border-gray-100 flex items-center justify-between">
+            <p className="text-xs text-gray-500 font-medium">
+              Mostrando {currentTenants.length} de {filteredTenants.length} empresas
+            </p>
+            <div className="flex gap-2">
               <button 
-                onClick={() => handleOpenModal(tenant)}
-                className="text-xs font-bold text-indigo-600 hover:underline flex items-center gap-1"
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => p - 1)}
+                className="px-3 py-1.5 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
-                <ShieldCheck className="w-3 h-3" /> Editar Configuración
+                Anterior
               </button>
-              <div className="flex items-center gap-3">
-                <button 
-                  onClick={() => handleDelete(tenant.id)}
-                  className="p-1.5 text-gray-400 hover:text-red-500 rounded-lg hover:bg-red-50 transition-colors"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
-              </div>
+              <button 
+                disabled={currentPage === totalPages}
+                onClick={() => setCurrentPage(p => p + 1)}
+                className="px-3 py-1.5 text-xs font-bold text-gray-500 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
+              >
+                Siguiente
+              </button>
             </div>
-          </motion.div>
-        ))}
+          </div>
+        )}
       </div>
 
       {/* Modal */}

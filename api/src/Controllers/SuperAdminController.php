@@ -80,74 +80,61 @@ class SuperAdminController {
             $db = Database::connect();
 
             if ($id) {
-                // ACTUALIZACIÓN BÁSICA (Solo Tenant)
-                Database::query("UPDATE tenants SET name = ?, domain = ?, status = ? WHERE id = ?", [
-                    $body['name'], $body['domain'] ?? null, $body['status'] ?? 'active', $id
-                ]);
+                // ACTUALIZACIÓN BÁSICA O CAMBIO DE ESTADO
+                $sql = "UPDATE tenants SET name = ?, domain = ?, status = ? WHERE id = ?";
+                $params = [
+                    $body['name'] ?? '', 
+                    $body['domain'] ?? null, 
+                    $body['status'] ?? 'active', 
+                    $id
+                ];
+
+                // Si solo viene el estado (cambio rápido desde la grilla)
+                if (count($body) <= 2 && isset($body['status'])) {
+                    $sql = "UPDATE tenants SET status = ? WHERE id = ?";
+                    $params = [$body['status'], $id];
+                }
+
+                Database::query($sql, $params);
             } else {
                 // ALTA NUEVA EMPRESA (TRANSACCIONAL)
-                
-                // 1. Validaciones previas
+                // ... (mantenemos la lógica de alta atómica anterior)
+                $adminEmail = $body['admin_email'] ?? '';
                 $existingTenant = Database::fetchOne("SELECT id FROM tenants WHERE name = ?", [$body['name']]);
                 if ($existingTenant) return Response::error("Ya existe una empresa con ese nombre.", 400);
 
-                $adminEmail = $body['admin_email'] ?? '';
                 $existingUser = Database::fetchOne("SELECT id FROM users WHERE email = ?", [$adminEmail]);
                 if ($existingUser) return Response::error("El email del administrador ya está en uso.", 400);
 
                 $db->beginTransaction();
 
-                // 2. Crear Tenant
                 Database::query("INSERT INTO tenants (name, domain, status) VALUES (?, ?, ?)", [
                     $body['name'], $body['domain'] ?? null, $body['status'] ?? 'active'
                 ]);
                 $tenantId = $db->lastInsertId();
 
-                // 3. Crear System Config
                 Database::query("
                     INSERT INTO system_config 
                     (tenant_id, company_name, logo_url, currency, primary_color, secondary_color, accent_color, sidebar_bg, sidebar_text, color_approved, color_submitted, color_rejected, color_draft) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ", [
-                    $tenantId,
-                    $body['name'],
-                    $body['logo_url'] ?? null,
-                    $body['currency'] ?? 'USD',
-                    $body['primary_color']   ?? '#4f46e5',
-                    $body['secondary_color'] ?? '#0f172a',
-                    $body['accent_color']    ?? '#06b6d4',
-                    $body['sidebar_bg']      ?? '#f8fafc',
-                    $body['sidebar_text']    ?? '#334155',
-                    $body['color_approved']  ?? '#10b981',
-                    $body['color_submitted'] ?? '#f59e0b',
-                    $body['color_rejected']  ?? '#ef4444',
-                    $body['color_draft']      ?? '#94a3b8'
+                    $tenantId, $body['name'], $body['logo_url'] ?? null, $body['currency'] ?? 'USD',
+                    $body['primary_color'] ?? '#4f46e5', $body['secondary_color'] ?? '#0f172a',
+                    $body['accent_color'] ?? '#06b6d4', $body['sidebar_bg'] ?? '#f8fafc',
+                    $body['sidebar_text'] ?? '#334155', $body['color_approved'] ?? '#10b981',
+                    $body['color_submitted'] ?? '#f59e0b', $body['color_rejected'] ?? '#ef4444',
+                    $body['color_draft'] ?? '#94a3b8'
                 ]);
 
-                // 4. Crear Usuario Administrador
                 $passwordHash = password_hash($body['admin_password'] ?? '123456', PASSWORD_DEFAULT);
                 Database::query("
                     INSERT INTO users (name, email, password, role, role_id, tenant_id, weekly_capacity, hourly_cost) 
                     VALUES (?, ?, ?, 'admin', 1, ?, 40, 0)
-                ", [
-                    $body['admin_name'] ?? 'Admin',
-                    $adminEmail,
-                    $passwordHash,
-                    $tenantId
-                ]);
+                ", [$body['admin_name'] ?? 'Admin', $adminEmail, $passwordHash, $tenantId]);
 
-                // 5. Matriz de Permisos
-                $features = [
-                    'dashboard', 'kanban', 'tracker', 'approvals', 'projects', 
-                    'clients', 'costs', 'report_heatmaps', 'report_audit', 
-                    'report_ai', 'report_custom', 'users', 'settings'
-                ];
-                
+                $features = ['dashboard', 'kanban', 'tracker', 'approvals', 'projects', 'clients', 'costs', 'report_heatmaps', 'report_audit', 'report_ai', 'report_custom', 'users', 'settings'];
                 foreach ($features as $f) {
-                    Database::query("
-                        INSERT INTO permissions (role_id, feature, can_access, tenant_id) 
-                        VALUES (1, ?, 1, ?)
-                    ", [$f, $tenantId]);
+                    Database::query("INSERT INTO permissions (role_id, feature, can_access, tenant_id) VALUES (1, ?, 1, ?)", [$f, $tenantId]);
                 }
 
                 $db->commit();
@@ -162,7 +149,19 @@ class SuperAdminController {
     public function deleteTenant($id) {
         $this->checkAccess();
         try {
+            // REGLA DE NEGOCIO: No permitir borrar si tiene más de 1 usuario (el admin)
+            $userCount = (int)Database::fetchOne("SELECT COUNT(*) as c FROM users WHERE tenant_id = ?", [$id])['c'];
+            
+            if ($userCount > 1) {
+                return Response::error("No se puede eliminar la empresa: tiene {$userCount} usuarios activos. Solo se permiten borrar empresas sin actividad comercial.", 403);
+            }
+            
+            // Si tiene 1 o 0 usuarios, procedemos con el borrado en cascada manual de config y permisos para mantener limpia la DB
+            Database::query("DELETE FROM system_config WHERE tenant_id = ?", [$id]);
+            Database::query("DELETE FROM permissions WHERE tenant_id = ?", [$id]);
+            Database::query("DELETE FROM users WHERE tenant_id = ?", [$id]);
             Database::query("DELETE FROM tenants WHERE id = ?", [$id]);
+            
             return Response::json(['success' => true]);
         } catch (\Throwable $e) {
             return Response::error("Error al eliminar: " . $e->getMessage());
