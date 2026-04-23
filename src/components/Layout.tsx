@@ -295,6 +295,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                 <p className="text-xs opacity-60 truncate uppercase">{user.role}</p>
               </div>
             )}
+            {/* 
             <button 
               onClick={handleLogout}
               className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors rounded-lg"
@@ -302,6 +303,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
             >
               <LogOut className="w-5 h-5" />
             </button>
+            */}
           </div>
 
           {/* Platform Version */}
