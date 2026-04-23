@@ -77,7 +77,7 @@ class SuperAdminController {
         $id = $body['id'] ?? null;
         
         try {
-            $db = Database::getInstance();
+            $db = Database::connect();
 
             if ($id) {
                 // ACTUALIZACIÓN BÁSICA (Solo Tenant)
