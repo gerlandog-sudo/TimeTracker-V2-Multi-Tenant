@@ -25,6 +25,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import api from '../../lib/api';
 import { format, differenceInDays, parseISO } from 'date-fns';
 import { es } from 'date-fns/locale';
+import { Pagination } from '../../components/Pagination';
 
 interface AuditLog {
   id: number;
@@ -56,6 +57,14 @@ const AuditLogPage: React.FC = () => {
   const [timeline, setTimeline] = useState<any[]>([]);
   const [loadingTimeline, setLoadingTimeline] = useState(false);
 
+  // Pagination State
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+
   // Filters
   const [filters, setFilters] = useState({
     start_date: format(new Date(new Date().setDate(new Date().getDate() - 30)), 'yyyy-MM-dd'),
@@ -70,10 +79,23 @@ const AuditLogPage: React.FC = () => {
   const fetchLogs = async () => {
     setLoading(true);
     try {
-      // Create copy of filters to avoid sending unused fields
-      const params = { ...filters };
+      const params = { 
+        ...filters,
+        page: pagination.page,
+        limit: pagination.limit
+      };
       const response = await api.get('/reports/audit', { params });
-      setLogs(Array.isArray(response.data) ? response.data : []);
+      
+      if (response.data?.data) {
+        setLogs(response.data.data);
+        setPagination(prev => ({
+          ...prev,
+          total: response.data.total,
+          totalPages: response.data.totalPages
+        }));
+      } else {
+        setLogs(Array.isArray(response.data) ? response.data : []);
+      }
     } catch (error) {
       console.error('Error fetching audit logs:', error);
       setLogs([]);
@@ -99,8 +121,11 @@ const AuditLogPage: React.FC = () => {
 
   useEffect(() => {
     fetchMetadata();
-    fetchLogs();
   }, []);
+
+  useEffect(() => {
+    fetchLogs();
+  }, [pagination.page, pagination.limit]);
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -448,6 +473,15 @@ const AuditLogPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        <Pagination 
+          currentPage={pagination.page}
+          totalPages={pagination.totalPages}
+          onPageChange={(page) => setPagination({ ...pagination, page })}
+          limit={pagination.limit}
+          onLimitChange={(limit) => setPagination({ ...pagination, limit, page: 1 })}
+          totalItems={pagination.total}
+        />
       </div>
 
       {/* Forensic Detail Drawer */}

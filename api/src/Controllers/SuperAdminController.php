@@ -105,10 +105,11 @@ class SuperAdminController {
                 if (count($body) <= 2 && isset($body['status'])) {
                     $result = $tenantService->toggleStatus($id, $body['status']);
                 } else {
+                    $domain = !empty($body['domain']) ? trim($body['domain']) : null;
                     $tenantRepo->update(
                         $id, 
                         $body['name'] ?? '', 
-                        $body['domain'] ?? null, 
+                        $domain, 
                         $body['status'] ?? 'active'
                     );
                     $result = ['success' => true];

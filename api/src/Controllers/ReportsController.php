@@ -67,8 +67,27 @@ class ReportsController {
     public function getAuditLog() {
         try {
             $tenantId = Context::getTenantId();
-            $limit    = (int)Request::input('limit', 100);
             
+            // Paginación
+            $limit = (int)Request::input('limit', 10);
+            $page  = (int)Request::input('page', 1);
+            $offset = ($page - 1) * $limit;
+
+            // Filtros básicos
+            $where = "WHERE te.tenant_id = ?";
+            $params = [$tenantId];
+
+            if ($startDate = Request::input('start_date')) { $where .= " AND tel.created_at >= ?"; $params[] = $startDate . ' 00:00:00'; }
+            if ($endDate = Request::input('end_date'))     { $where .= " AND tel.created_at <= ?"; $params[] = $endDate . ' 23:59:59'; }
+            if ($projectId = Request::input('project_id')) { $where .= " AND te.project_id = ?"; $params[] = $projectId; }
+            if ($ownerId = Request::input('owner_id'))     { $where .= " AND te.user_id = ?"; $params[] = $ownerId; }
+
+            $total = (int)Database::fetchOne("
+                SELECT COUNT(*) as total 
+                FROM time_entry_logs tel
+                JOIN time_entries te ON tel.time_entry_id = te.id
+                $where", $params)['total'];
+
             $sql = "SELECT tel.*, 
                            u_actor.name as actor_name,
                            u_owner.name as owner_name,
@@ -86,11 +105,17 @@ class ReportsController {
                     JOIN users u_owner ON te.user_id = u_owner.id
                     JOIN projects p ON te.project_id = p.id
                     JOIN tasks_master tm ON te.task_id = tm.id
-                    WHERE te.tenant_id = ? 
+                    $where 
                     ORDER BY tel.created_at DESC 
-                    LIMIT $limit";
+                    LIMIT $limit OFFSET $offset";
 
-            return Response::json(Database::fetchAll($sql, [$tenantId]));
+            return Response::json([
+                'data' => Database::fetchAll($sql, $params),
+                'total' => $total,
+                'page' => $page,
+                'limit' => $limit,
+                'totalPages' => ceil($total / $limit)
+            ]);
         } catch (\Throwable $e) {
             return Response::error("Audit Log Error: " . $e->getMessage());
         }

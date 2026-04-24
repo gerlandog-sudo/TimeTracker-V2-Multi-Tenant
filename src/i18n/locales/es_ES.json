@@ -468,7 +468,7 @@
     "color_submitted": "Enviadas",
     "color_rejected": "Rechazadas",
     "color_draft": "Borrador",
-    "changes_saved": "¡Cambios guardados con éxito!",
+    "changes_saved": "Cambios guardados con éxito",
     "apply_to_all": "Los cambios se aplicarán a todos los usuarios inmediatamente.",
     "save_changes": "Guardar Cambios",
     "roles_title": "Control de Acceso por Rol",
@@ -509,7 +509,7 @@
     "secondary_color": "Color Secundario",
     "accent_color": "Color de Acento",
     "tracker_colors": "Colores de Estados (Tracker)",
-    "save_success": "¡Cambios guardados con éxito!",
+    "save_success": "Cambios guardados con éxito",
     "apply_global": "Los cambios se aplicarán a todos los usuarios inmediatamente.",
     "role_access": "Control de Acceso por Rol",
     "pagination": {

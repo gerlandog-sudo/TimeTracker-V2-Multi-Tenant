@@ -434,30 +434,32 @@ const TenantsList: React.FC = () => {
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
               className="bg-white rounded-[2rem] w-full max-w-4xl overflow-hidden shadow-2xl my-4 border border-gray-100 flex flex-col"
             >
-              {/* Stepper Header Compacto */}
-              <div className="px-8 py-4 bg-gray-50/50 border-b border-gray-100">
-                <div className="relative flex justify-between max-w-2xl mx-auto">
-                  <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-1/2 z-0"></div>
-                  <motion.div 
-                    className="absolute top-1/2 left-0 h-0.5 bg-indigo-500 -translate-y-1/2 z-0"
-                    initial={{ width: "0%" }}
-                    animate={{ width: currentStep === 1 ? "0%" : currentStep === 2 ? "50%" : "100%" }}
-                  />
-                  
-                  {[1, 2, 3].map((step) => (
-                    <div key={step} className="relative z-10 flex flex-col items-center gap-1.5">
-                      <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 transition-all duration-500 ${
-                        currentStep >= step ? 'bg-indigo-600 border-indigo-100 text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'
-                      }`}>
-                        {currentStep > step ? <Check className="w-4 h-4" /> : <span className="font-bold text-xs">{step}</span>}
+              {/* Stepper Header Compacto - Solo en creación */}
+              {formData.id === null && (
+                <div className="px-8 py-4 bg-gray-50/50 border-b border-gray-100">
+                  <div className="relative flex justify-between max-w-2xl mx-auto">
+                    <div className="absolute top-1/2 left-0 w-full h-0.5 bg-gray-200 -translate-y-1/2 z-0"></div>
+                    <motion.div 
+                      className="absolute top-1/2 left-0 h-0.5 bg-indigo-500 -translate-y-1/2 z-0"
+                      initial={{ width: "0%" }}
+                      animate={{ width: currentStep === 1 ? "0%" : currentStep === 2 ? "50%" : "100%" }}
+                    />
+                    
+                    {[1, 2, 3].map((step) => (
+                      <div key={step} className="relative z-10 flex flex-col items-center gap-1.5">
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center border-4 transition-all duration-500 ${
+                          currentStep >= step ? 'bg-indigo-600 border-indigo-100 text-white shadow-md' : 'bg-white border-gray-100 text-gray-400'
+                        }`}>
+                          {currentStep > step ? <Check className="w-4 h-4" /> : <span className="font-bold text-xs">{step}</span>}
+                        </div>
+                        <span className={`text-[9px] font-black uppercase tracking-widest ${currentStep >= step ? 'text-indigo-600' : 'text-gray-400'}`}>
+                          {step === 1 ? t('super.tenants.section_general') : step === 2 ? t('super.tenants.section_identity') : t('super.tenants.section_admin')}
+                        </span>
                       </div>
-                      <span className={`text-[9px] font-black uppercase tracking-widest ${currentStep >= step ? 'text-indigo-600' : 'text-gray-400'}`}>
-                        {step === 1 ? t('super.tenants.section_general') : step === 2 ? t('super.tenants.section_identity') : t('super.tenants.section_admin')}
-                      </span>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Form Content Sin Scroll */}
               <form onSubmit={handleSubmit} className="p-8">
@@ -543,7 +545,7 @@ const TenantsList: React.FC = () => {
                     </motion.div>
                   )}
 
-                  {currentStep === 2 && (
+                  {currentStep === 2 && formData.id === null && (
                     <motion.div 
                       key="step2"
                       initial={{ opacity: 0, x: 20 }}
@@ -619,7 +621,7 @@ const TenantsList: React.FC = () => {
                     </motion.div>
                   )}
 
-                  {currentStep === 3 && (
+                  {currentStep === 3 && formData.id === null && (
                     <motion.div 
                       key="step3"
                       initial={{ opacity: 0, x: 20 }}
@@ -692,7 +694,7 @@ const TenantsList: React.FC = () => {
                 </button>
 
                 <div className="flex items-center gap-3">
-                  {currentStep < 3 ? (
+                  {(currentStep < 3 && formData.id === null) ? (
                     <button 
                       type="button"
                       onClick={nextStep}

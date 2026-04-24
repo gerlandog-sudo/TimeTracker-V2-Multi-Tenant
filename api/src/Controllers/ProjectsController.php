@@ -21,7 +21,7 @@ class ProjectsController {
         $where  = "WHERE p.tenant_id = ?";
         $params = [$tenantId];
 
-        if (isset($_GET['status']) && !empty($_GET['status'])) {
+        if (isset($_GET['status']) && !empty($_GET['status']) && $_GET['status'] !== 'all') {
             $where .= " AND p.status = ?"; $params[] = $_GET['status'];
         }
         if (($user['role'] ?? '') !== 'admin' && $participating) {
@@ -31,19 +31,14 @@ class ProjectsController {
 
         $total  = (int)Database::fetchOne("SELECT COUNT(*) as total FROM projects p $where", $params)['total'];
         
-        // Consulta para obtener proyectos con horas y dinero consumido (revenue)
-        // Calculamos revenue basado en position_costs (precio de venta)
+        // Usamos summary_projects_stats para los cálculos financieros (actualizada por triggers en DB)
         $sql    = "SELECT p.*, c.name as client_name,
-                   (SELECT COALESCE(SUM(t.hours), 0) FROM time_entries t WHERE t.project_id = p.id AND t.status = 'approved') as actual_hours,
-                   (SELECT COALESCE(SUM(t.hours * COALESCE(pc.hourly_cost, 0)), 0) 
-                    FROM time_entries t 
-                    JOIN users u ON t.user_id = u.id
-                    LEFT JOIN position_costs pc ON u.position_id = pc.position_id 
-                         AND u.seniority = pc.seniority 
-                         AND pc.tenant_id = t.tenant_id
-                    WHERE t.project_id = p.id AND t.status = 'approved') as actual_revenue
+                          COALESCE(s.actual_hours, 0) as actual_hours,
+                          COALESCE(s.actual_revenue, 0) as actual_revenue,
+                          COALESCE(s.actual_cost, 0) as actual_cost
                    FROM projects p
                    JOIN clients c ON p.client_id = c.id
+                   LEFT JOIN summary_projects_stats s ON p.id = s.project_id
                    $where 
                    ORDER BY p.status ASC, p.created_at DESC";
 

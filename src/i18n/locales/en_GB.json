@@ -414,7 +414,7 @@
     "colour_submitted": "Submitted",
     "colour_rejected": "Rejected",
     "colour_draft": "Draft",
-    "changes_saved": "Changes saved successfully!",
+    "changes_saved": "Changes saved successfully",
     "apply_to_all": "Changes apply to all users immediately.",
     "save_changes": "Save Changes",
     "roles_title": "Role Access Control",
@@ -455,7 +455,7 @@
     "secondary_colour": "Secondary Colour",
     "accent_colour": "Accent Colour",
     "tracker_colours": "Status Colours (Tracker)",
-    "save_success": "Changes saved successfully!",
+    "save_success": "Changes saved successfully",
     "apply_global": "Changes will be applied to all users immediately.",
     "role_access": "Role-Based Access Control",
     "pagination": {
@@ -512,7 +512,7 @@
     "otp_placeholder": "6 digits",
     "new_password": "New Password",
     "confirm_button": "Reset Password",
-    "success": "Password updated successfully!",
+    "success": "Password updated successfully",
     "otp_sent": "Code sent. Please check your inbox.",
     "error_otp": "Invalid or expired code.",
     "back_to_login": "Back to login"

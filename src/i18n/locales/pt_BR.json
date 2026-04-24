@@ -415,7 +415,7 @@
     "color_submitted": "Enviadas",
     "color_rejected": "Rejeitadas",
     "color_draft": "Rascunho",
-    "changes_saved": "Mudanças salvas com sucesso!",
+    "changes_saved": "Mudanças salvas com sucesso",
     "apply_to_all": "As mudanças serão aplicadas a todos os usuários imediatamente.",
     "save_changes": "Salvar Mudanças",
     "roles_title": "Controle de Acesso por Papel",
@@ -457,7 +457,7 @@
     "secondary_color": "Cor Secundária",
     "accent_color": "Cor de Acento",
     "tracker_colors": "Cores de Status (Tracker)",
-    "save_success": "Mudanças salvas com sucesso!",
+    "save_success": "Mudanças salvas com sucesso",
     "apply_global": "As mudanças serão aplicadas a todos os usuários imediatamente.",
     "role_access": "Controle de Acesso por Papel",
     "pagination": {
@@ -514,7 +514,7 @@
     "otp_placeholder": "6 dígitos",
     "new_password": "Nova Senha",
     "confirm_button": "Redefinir Senha",
-    "success": "Senha atualizada com sucesso!",
+    "success": "Senha atualizada com sucesso",
     "otp_sent": "Código enviado. Verifique sua caixa de entrada.",
     "error_otp": "Código inválido ou expirado.",
     "back_to_login": "Voltar ao login"

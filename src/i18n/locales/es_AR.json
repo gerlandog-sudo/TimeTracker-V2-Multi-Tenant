@@ -415,7 +415,7 @@
     "color_submitted": "Enviadas",
     "color_rejected": "Rechazadas",
     "color_draft": "Borrador",
-    "changes_saved": "¡Cambios guardados con éxito!",
+    "changes_saved": "Cambios guardados con éxito",
     "apply_to_all": "Los cambios se aplicarán a todos los usuarios inmediatamente.",
     "save_changes": "Guardar Cambios",
     "roles_title": "Control de Acceso por Rol",
@@ -457,7 +457,7 @@
     "secondary_color": "Color Secundario",
     "accent_color": "Color de Acento",
     "tracker_colors": "Colores de Estados (Tracker)",
-    "save_success": "¡Cambios guardados con éxito!",
+    "save_success": "Cambios guardados con éxito",
     "apply_global": "Los cambios se aplicarán a todos los usuarios inmediatamente.",
     "role_access": "Control de Acceso por Rol",
     "pagination": {
@@ -513,7 +513,7 @@
     "otp_placeholder": "6 dígitos",
     "new_password": "Nueva Contraseña",
     "confirm_button": "Restablecer Contraseña",
-    "success": "¡Contraseña actualizada con éxito!",
+    "success": "Contraseña actualizada con éxito",
     "otp_sent": "El código ha sido enviado. Revisa tu casilla de correo.",
     "error_otp": "Código inválido o expirado.",
     "back_to_login": "Volver al inicio"

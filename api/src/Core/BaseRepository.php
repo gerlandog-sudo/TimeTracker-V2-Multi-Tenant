@@ -22,7 +22,7 @@ abstract class BaseRepository {
             return $stmt;
         } catch (Exception $e) {
             error_log("Database Error: " . $e->getMessage());
-            throw new Exception("Error en la operación de base de datos.");
+            throw new Exception("Database Error: " . $e->getMessage());
         }
     }
 
