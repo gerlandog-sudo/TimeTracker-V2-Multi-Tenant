@@ -71,9 +71,12 @@ class KanbanController {
             $completed_at = date('Y-m-d H:i:s');
         }
 
-        Database::query("UPDATE kanban_tasks SET project_id = ?, description = ?, priority = ?, task_type_id = ?, estimated_hours = ?, status = ?, started_at = ?, completed_at = ? WHERE id = ? AND tenant_id = ?", [
-            $body['project_id'] ?? $task['project_id'], $body['description'] ?? $task['description'],
-            $body['priority'] ?? $task['priority'], $body['task_type_id'] ?? $task['task_type_id'],
+        Database::query("UPDATE kanban_tasks SET project_id = ?, user_id = ?, description = ?, priority = ?, task_type_id = ?, estimated_hours = ?, status = ?, started_at = ?, completed_at = ? WHERE id = ? AND tenant_id = ?", [
+            $body['project_id'] ?? $task['project_id'],
+            $body['user_id'] ?? $task['user_id'],
+            $body['description'] ?? $task['description'],
+            $body['priority'] ?? $task['priority'],
+            $body['task_type_id'] ?? $task['task_type_id'],
             $body['estimated_hours'] ?? $task['estimated_hours'],
             $newStatus, $started_at, $completed_at, $id, $tenantId
         ]);

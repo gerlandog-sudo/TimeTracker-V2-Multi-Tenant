@@ -240,33 +240,28 @@ const UsersPage: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('users.title')}</h1>
-          <p className="text-gray-500">{t('users.subtitle')}</p>
+      {/* Filters & Actions */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-4 mb-6">
+        <div className="flex-1 min-w-[300px] relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input 
+            type="text"
+            placeholder={t('users.search')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm text-sm"
+          />
         </div>
+        
         <button 
           onClick={() => handleOpenModal()}
-          className="bg-primary text-white px-4 py-2 rounded-lg font-semibold flex items-center gap-2 hover:bg-primary/90 transition-all"
+          className="bg-primary text-white font-bold py-3 px-6 rounded-2xl hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20 whitespace-nowrap"
         >
-          <UserPlus className="w-4 h-4" /> {t('users.new_user')}
+          <UserPlus className="w-5 h-5" /> {t('users.new_user')}
         </button>
       </div>
 
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-        <div className="p-4 border-b border-gray-100 flex gap-4">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input 
-              type="text" 
-              placeholder={t('users.search')} 
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
-        </div>
-        
         <div className="overflow-x-auto">
           <table className="w-full text-left">
             <thead>

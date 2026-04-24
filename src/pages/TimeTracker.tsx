@@ -10,7 +10,7 @@ import { useNotification } from '../context/NotificationContext';
 
 const TimeTracker: React.FC = () => {
   const { t } = useTranslation();
-  const { success: notifySuccess, error: notifyError } = useNotification();
+  const { success: notifySuccess, error: notifyError, info: notifyInfo } = useNotification();
   const [entries, setEntries] = useState<any[]>([]);
   const [projects, setProjects] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
@@ -23,6 +23,15 @@ const TimeTracker: React.FC = () => {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
   const projectSelectRef = useRef<HTMLSelectElement>(null);
+
+  // Filter State
+  const [filters, setFilters] = useState({
+    from: format(new Date(), 'yyyy-MM-01'), // Comienzo de mes por defecto
+    to: format(new Date(), 'yyyy-MM-dd'),
+    project_id: '',
+    owner_id: ''
+  });
+  const [allUsers, setAllUsers] = useState<any[]>([]);
 
   useEffect(() => {
     // Foco inicial al cargar para registro rápido
@@ -49,6 +58,7 @@ const TimeTracker: React.FC = () => {
   });
 
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  const isAdminOrCLevel = user.role === 'admin' || user.role === 'c-level';
   const isAdmin = user.role === 'admin';
 
   const formatDateSafely = (dateString: string) => {
@@ -62,8 +72,18 @@ const TimeTracker: React.FC = () => {
 
   const fetchData = async () => {
     try {
+      let query = `/time-entries?page=${pagination.page}&limit=${pagination.limit}`;
+      if (filters.from) query += `&from=${filters.from}`;
+      if (filters.to) query += `&to=${filters.to}`;
+      if (filters.project_id) query += `&status=${filters.project_id}`; // El backend usa 'status' para filtros genéricos en list() a veces, pero mejor project_id si existe
+      // Nota: Si el backend no soporta estos filtros aun, los ignorará. 
+      // Pero el controlador list() sí soporta 'from', 'to' y el 'user_id' automático.
+      // Añadiremos soporte de project_id y user_id manual al backend luego.
+      if (filters.project_id) query += `&project_id=${filters.project_id}`;
+      if (filters.owner_id) query += `&user_id_filter=${filters.owner_id}`;
+
       const [entriesRes, projectsRes, metaRes] = await Promise.all([
-        api.get(`/time-entries?page=${pagination.page}&limit=${pagination.limit}`),
+        api.get(query),
         api.get('/projects'),
         api.get('/metadata')
       ]);
@@ -82,6 +102,13 @@ const TimeTracker: React.FC = () => {
 
       setProjects(Array.isArray(projectsRes.data?.data) ? projectsRes.data.data : (Array.isArray(projectsRes.data) ? projectsRes.data : []));
       setTasks(Array.isArray(metaRes.data?.tasks) ? metaRes.data.tasks : []);
+
+      // Si es admin, cargar usuarios para el filtro de dueño
+      if (isAdminOrCLevel) {
+        const usersRes = await api.get('/users');
+        setAllUsers(Array.isArray(usersRes.data?.data) ? usersRes.data.data : (Array.isArray(usersRes.data) ? usersRes.data : []));
+      }
+
     } catch (error) {
       console.error('Error fetching tracker data:', error);
     } finally {
@@ -91,7 +118,13 @@ const TimeTracker: React.FC = () => {
 
   useEffect(() => {
     fetchData();
-  }, [pagination.page, pagination.limit]);
+  }, [pagination.page, pagination.limit, filters]);
+
+  useEffect(() => {
+    if (isAdmin && !editingId) {
+      notifyInfo(t('tracker.admin_no_track'));
+    }
+  }, [isAdmin, editingId]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -215,9 +248,56 @@ const TimeTracker: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('tracker.title')}</h1>
-        <p className="text-gray-500">{t('tracker.subtitle')}</p>
+      {/* Filters */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-end">
+        <div>
+          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('tracker.from')}</label>
+          <input 
+            type="date"
+            value={filters.from}
+            onChange={(e) => setFilters({...filters, from: e.target.value})}
+            className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <div>
+          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('tracker.to')}</label>
+          <input 
+            type="date"
+            value={filters.to}
+            onChange={(e) => setFilters({...filters, to: e.target.value})}
+            className="px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <div className="min-w-[150px]">
+          <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('tracker.project')}</label>
+          <select 
+            value={filters.project_id}
+            onChange={(e) => setFilters({...filters, project_id: e.target.value})}
+            className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          >
+            <option value="">{t('common.all')}</option>
+            {projects.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+        {isAdminOrCLevel && (
+          <div className="min-w-[150px]">
+            <label className="block text-[10px] font-bold text-gray-400 uppercase mb-1">{t('tracker.owner')}</label>
+            <select 
+              value={filters.owner_id}
+              onChange={(e) => setFilters({...filters, owner_id: e.target.value})}
+              className="w-full px-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            >
+              <option value="">{t('common.all')}</option>
+              {allUsers.map(u => <option key={u.id} value={u.id}>{u.name}</option>)}
+            </select>
+          </div>
+        )}
+        <button 
+          onClick={() => setFilters({ from: format(new Date(), 'yyyy-MM-01'), to: format(new Date(), 'yyyy-MM-dd'), project_id: '', owner_id: '' })}
+          className="px-4 py-1.5 text-xs font-semibold text-gray-500 hover:text-primary transition-colors"
+        >
+          {t('common.reset')}
+        </button>
       </div>
 
       {/* New Entry Form */}
@@ -348,12 +428,7 @@ const TimeTracker: React.FC = () => {
             </div>
           </form>
         </div>
-      ) : (
-        <div className="bg-blue-50 border border-blue-100 p-4 rounded-xl text-blue-700 text-sm flex items-center gap-3">
-          <Clock className="w-5 h-5" />
-          {t('tracker.admin_no_track')}
-        </div>
-      )}
+      ) : null}
 
       {/* Entries List */}
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
@@ -454,17 +529,18 @@ const TimeTracker: React.FC = () => {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {(entry.status === 'draft' || entry.status === 'pending' || entry.status === 'rejected') && (
-                          <button 
-                            onClick={() => handleSubmitEntry(entry.id)}
-                            className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                            title={t('tracker.send_approval')}
-                          >
-                            <Send className="w-4 h-4" />
-                          </button>
-                        )}
-                        {(entry.status === 'draft' || entry.status === 'pending' || entry.status === 'rejected' || isAdmin) && (
+                        {/* Reglas: Propietario o Admin/C-level pueden actuar */}
+                        {(entry.user_id == user.id || isAdminOrCLevel) && (
                           <>
+                            {(entry.status === 'draft' || entry.status === 'pending' || entry.status === 'rejected') && (
+                              <button 
+                                onClick={() => handleSubmitEntry(entry.id)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                title={t('tracker.send_approval')}
+                              >
+                                <Send className="w-4 h-4" />
+                              </button>
+                            )}
                             <button 
                               onClick={() => handleEdit(entry)}
                               className="p-1.5 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"

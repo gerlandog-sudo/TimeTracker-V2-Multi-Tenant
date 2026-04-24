@@ -233,26 +233,11 @@ const AuditLogPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t('reports.audit_title')}</h1>
-        <p className="text-gray-500">{t('reports.audit_subtitle')}</p>
-      </div>
-
       {/* Filters */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs">
-            <Filter className="w-3.5 h-3.5" />
-            {t('reports.filters_title')}
-          </div>
-          <button 
-            onClick={fetchLogs}
-            className="flex items-center gap-2 px-3 py-1.5 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-sm text-xs"
-          >
-            <Search className="w-3.5 h-3.5" />
-            {t('reports.update_report')}
-          </button>
+        <div className="flex items-center gap-2 text-indigo-600 font-semibold text-xs">
+          <Filter className="w-3.5 h-3.5" />
+          {t('reports.filters_title')}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -304,6 +289,17 @@ const AuditLogPage: React.FC = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-6 pt-3 border-t border-gray-50">
+          <div className="flex items-center gap-3 px-3 py-1 bg-gray-50 rounded-lg border border-gray-100">
+            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{t('reports.anomaly_threshold')}</label>
+            <input 
+              type="number" 
+              name="anomaly_threshold"
+              value={filters.anomaly_threshold}
+              onChange={handleFilterChange}
+              className="w-10 bg-transparent border-none text-xs font-bold text-indigo-600 focus:outline-none focus:ring-0 p-0"
+            />
+          </div>
+
           <label className="flex items-center gap-2 cursor-pointer group">
             <div className="relative flex items-center">
               <input 
@@ -334,16 +330,13 @@ const AuditLogPage: React.FC = () => {
             <span className="text-xs font-medium text-gray-600 group-hover:text-gray-900 transition-colors">{t('reports.post_approval')}</span>
           </label>
 
-          <div className="flex items-center gap-3 ml-auto px-3 py-1 bg-gray-50 rounded-lg border border-gray-100">
-            <label className="text-[9px] font-bold text-gray-400 uppercase tracking-widest">{t('reports.anomaly_threshold')}</label>
-            <input 
-              type="number" 
-              name="anomaly_threshold"
-              value={filters.anomaly_threshold}
-              onChange={handleFilterChange}
-              className="w-10 bg-transparent border-none text-xs font-bold text-indigo-600 focus:outline-none focus:ring-0 p-0"
-            />
-          </div>
+          <button 
+            onClick={fetchLogs}
+            className="ml-auto flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-colors shadow-sm text-xs font-semibold"
+          >
+            <Search className="w-3.5 h-3.5" />
+            {t('reports.update_report')}
+          </button>
         </div>
       </div>
 

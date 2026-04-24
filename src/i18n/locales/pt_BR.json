@@ -133,7 +133,8 @@
     "next": "Próximo",
     "previous": "Anterior",
     "error": "Ocorreu um erro inesperado",
-    "success": "Operação realizada com sucesso"
+    "success": "Operação realizada com sucesso",
+    "reset": "Limpar"
   },
   "profile": {
     "title": "Meu Perfil",
@@ -254,8 +255,11 @@
     "pending": "Pendente",
     "no_comments": "Sem comentários",
     "warnings_8h": "Atenção: Você excederá 8 horas diárias",
-    "admin_no_track": "Administradores não podem registrar horas. Por favor, use uma conta de staff o comercial para esta tarefa.",
-    "no_entries": "Ainda não há registros."
+    "admin_no_track": "Administradores não podem registrar horas. Por favor, use uma cuenta de staff o comercial para esta tarefa.",
+    "no_entries": "Ainda não há registros.",
+    "from": "De",
+    "to": "Até",
+    "owner": "Proprietário"
   },
   "approvals": {
     "title": "Aprovação de Horas",

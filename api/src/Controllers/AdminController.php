@@ -17,11 +17,22 @@ class AdminController {
             $tenantId = isset($_GET['tenant_id']) ? (int)$_GET['tenant_id'] : (Context::getTenantId());
             if ($tenantId === null) $tenantId = 1;
             
-            // Intentar obtener config específica del tenant
-            $config = Database::fetchOne("SELECT * FROM system_config WHERE tenant_id = ?", [$tenantId]);
+            // Intentar obtener config específica del tenant junto con su status
+            $config = Database::fetchOne("
+                SELECT sc.*, t.status 
+                FROM system_config sc
+                LEFT JOIN tenants t ON t.id = sc.tenant_id
+                WHERE sc.tenant_id = ?
+            ", [$tenantId]);
+            
             // Si no existe y no es el super admin (0), obtener la global (id = 1)
             if (!$config && $tenantId != 0) {
-                $config = Database::fetchOne("SELECT * FROM system_config WHERE id = 1");
+                $config = Database::fetchOne("
+                    SELECT sc.*, t.status 
+                    FROM system_config sc
+                    LEFT JOIN tenants t ON t.id = sc.tenant_id
+                    WHERE sc.id = 1
+                ");
             }
             if (!$config) {
                 $config = Database::fetchOne("SELECT * FROM system_config LIMIT 1");

@@ -21,6 +21,7 @@ import {
   Activity
 } from 'lucide-react';
 import { useTheme } from '../context/ThemeContext';
+import { useNotification } from '../context/NotificationContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { useTranslation } from 'react-i18next';
 import api from '../lib/api';
@@ -39,7 +40,28 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { config, hasPermission } = useTheme();
+  const { suspended: notifySuspended } = useNotification();
   const user = JSON.parse(localStorage.getItem('user') || '{}');
+  
+  const isSuspended = !(user.is_super_admin === true || user.is_super_admin === 1 || user.is_super_admin === "1") && 
+                     (config.status === 'paused' || config.status === 'suspended');
+
+  const notifiedRef = React.useRef(false);
+
+  // Redirección si intenta salir del dashboard estando suspendido
+  useEffect(() => {
+    if (isSuspended && location.pathname !== '/' && location.pathname !== '/dashboard') {
+      navigate('/');
+    }
+  }, [isSuspended, location.pathname, navigate]);
+
+  // Notificación persistente de suspensión (una sola vez)
+  useEffect(() => {
+    if (isSuspended && !notifiedRef.current) {
+      notifySuspended(t('common.tenant_suspended_msg', 'Esta empresa se encuentra pausada o suspendida. Por favor, póngase en contacto con el soporte técnico para regularizar su situación.'));
+      notifiedRef.current = true;
+    }
+  }, [isSuspended, notifySuspended, t]);
 
   // Mapeo de locales para date-fns
   const dateLocales: Record<string, any> = {
@@ -132,6 +154,9 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
   ];
 
   const filteredNavItems = user.is_super_admin ? navItems : navItems.filter(item => {
+    // Si está suspendido, solo permitir Dashboard
+    if (isSuspended && item.path !== '/') return false;
+
     if (item.subItems) {
       return item.subItems.some(sub => hasPermission(sub.feature));
     }
@@ -309,11 +334,17 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
           </div>
 
           {/* Platform Version */}
-          <div className="mt-auto px-6 py-4 border-t border-gray-50">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[10px] font-black text-gray-400 tracking-widest">TimeTracker</span>
-              <span className="text-[10px] font-bold text-gray-300">v{typeof APP_VERSION !== 'undefined' ? APP_VERSION : '2.01.001'}</span>
-            </div>
+          <div className={`mt-auto border-t border-gray-50 ${isSidebarOpen ? 'px-6 py-4' : 'flex justify-center py-4'}`}>
+            {isSidebarOpen ? (
+              <div className="flex flex-col gap-0.5">
+                <span className="text-[10px] font-black text-gray-400 tracking-widest uppercase">TimeTracker</span>
+                <span className="text-[10px] font-bold text-gray-300">v{typeof APP_VERSION !== 'undefined' ? APP_VERSION : '2.01.001'}</span>
+              </div>
+            ) : (
+              <div className="w-8 h-8 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 font-black text-sm select-none shadow-inner" title={`TimeTracker v${typeof APP_VERSION !== 'undefined' ? APP_VERSION : '2.01.001'}`}>
+                T
+              </div>
+            )}
           </div>
         </div>
       </motion.aside>

@@ -42,6 +42,19 @@ class TimeEntriesController {
         }
         if (!empty($_GET['from'])) { $where .= " AND t.date >= ?"; $params[] = $_GET['from']; }
         if (!empty($_GET['to']))   { $where .= " AND t.date <= ?"; $params[] = $_GET['to']; }
+        
+        // Filtros avanzados para Admin/C-Level
+        if (($user['role'] === 'admin' || $user['role'] === 'c-level')) {
+            if (!empty($_GET['user_id_filter'])) {
+                $where .= " AND t.user_id = ?";
+                $params[] = $_GET['user_id_filter'];
+            }
+        }
+        
+        if (!empty($_GET['project_id'])) {
+            $where .= " AND t.project_id = ?";
+            $params[] = $_GET['project_id'];
+        }
 
         try {
             $total = (int)Database::fetchOne("SELECT COUNT(*) as total FROM time_entries t $where", $params)['total'];
@@ -101,8 +114,15 @@ class TimeEntriesController {
         $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$entry) return Response::error("No encontrado", 404);
 
-        if ((int)$entry['user_id'] !== (int)$user['id'] && $user['role'] !== 'admin') return Response::error("Sin permisos", 403);
-        if (!in_array($entry['status'], ['draft', 'pending', 'rejected']) && $user['role'] !== 'admin') return Response::error("Solo se pueden editar registros en estado Borrador o Rechazado", 400);
+        $isAdminOrCLevel = in_array($user['role'], ['admin', 'c-level']);
+
+        if ((int)$entry['user_id'] !== (int)$user['id'] && !$isAdminOrCLevel) {
+            return Response::error("Sin permisos", 403);
+        }
+        
+        if (!in_array($entry['status'], ['draft', 'pending', 'rejected']) && !$isAdminOrCLevel) {
+            return Response::error("Solo se pueden editar registros en estado Borrador o Rechazado", 400);
+        }
 
         Database::query("UPDATE time_entries SET project_id = ?, task_id = ?, description = ?, hours = ?, date = ? WHERE id = ? AND tenant_id = ?",
             [$body['project_id'], $body['task_id'], $body['description'], $body['hours'], $body['date'], $id, $tenantId]);
@@ -116,7 +136,8 @@ class TimeEntriesController {
 
         $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$entry) return Response::error("No encontrado", 404);
-        if ($entry['user_id'] != $user['id']) return Response::error("Sin permisos", 403);
+        $isAdminOrCLevel = in_array($user['role'], ['admin', 'c-level']);
+        if ($entry['user_id'] != $user['id'] && !$isAdminOrCLevel) return Response::error("Sin permisos", 403);
         if (!in_array($entry['status'], ['draft', 'rejected'])) return Response::error("Estado inválido para envío", 400);
 
         Database::query("UPDATE time_entries SET status = 'submitted', submitted_at = NOW() WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
@@ -134,6 +155,15 @@ class TimeEntriesController {
 
         $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$entry) return Response::error("No encontrado", 404);
+        
+        // Validación basada en permisos de la DB
+        $roleId = $user['role_id'] ?? 0;
+        $hasPerm = Database::fetchOne("SELECT can_access FROM permissions WHERE role_id = ? AND feature = 'approvals' AND tenant_id = ?", [$roleId, $tenantId]);
+        
+        if (($hasPerm['can_access'] ?? 0) != 1 && !in_array($user['role'], ['admin', 'c-level'])) {
+            return Response::error("Sin permisos para aprobar", 403);
+        }
+
         if (!in_array($newStatus, ['approved', 'rejected', 'draft'])) return Response::error("Estado inválido", 400);
 
         $sql    = "UPDATE time_entries SET status = ?, reviewed_by = ?, rejection_reason = ?";
@@ -155,8 +185,15 @@ class TimeEntriesController {
 
     public function bulkStatus() {
         $user = Context::getUser();
-        if (!$user) return Response::error("Sin permisos", 403);
+        if (!$user) return Response::error("No autenticado", 401);
         $tenantId = $user['tenant_id'];
+
+        $roleId = $user['role_id'] ?? 0;
+        $hasPerm = Database::fetchOne("SELECT can_access FROM permissions WHERE role_id = ? AND feature = 'approvals' AND tenant_id = ?", [$roleId, $tenantId]);
+
+        if (($hasPerm['can_access'] ?? 0) != 1 && !in_array($user['role'], ['admin', 'c-level'])) {
+            return Response::error("Sin permisos", 403);
+        }
         $body      = Request::getBody();
         $ids       = $body['ids'] ?? [];
         $newStatus = $body['status'] ?? '';
@@ -181,7 +218,8 @@ class TimeEntriesController {
         $tenantId = $user['tenant_id'];
         $entry = Database::fetchOne("SELECT * FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         if (!$entry) return Response::error("No encontrado", 404);
-        if ((int)$entry['user_id'] !== (int)$user['id'] && $user['role'] !== 'admin') return Response::error("Sin permisos", 403);
+        $isAdminOrCLevel = in_array($user['role'], ['admin', 'c-level']);
+        if ((int)$entry['user_id'] !== (int)$user['id'] && !$isAdminOrCLevel) return Response::error("Sin permisos", 403);
         Database::query("DELETE FROM time_entries WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         return Response::json(['success' => true]);
     }

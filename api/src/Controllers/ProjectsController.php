@@ -24,7 +24,8 @@ class ProjectsController {
         if (isset($_GET['status']) && !empty($_GET['status']) && $_GET['status'] !== 'all') {
             $where .= " AND p.status = ?"; $params[] = $_GET['status'];
         }
-        if (($user['role'] ?? '') !== 'admin' && $participating) {
+        $isManager = in_array($user['role'] ?? '', ['admin', 'c-level']);
+        if (!$isManager) {
             $where .= " AND p.id IN (SELECT DISTINCT project_id FROM time_entries WHERE user_id = ?)";
             $params[] = $user['id'];
         }
@@ -54,28 +55,30 @@ class ProjectsController {
     }
 
     public function create() {
-        $body = Request::getBody();
+        $tenantId = Context::getTenantId();
         Database::query("INSERT INTO projects (client_id, name, budget_hours, budget_money, status, tenant_id) VALUES (?, ?, ?, ?, ?, ?)", [
             $body['client_id'], $body['name'], $body['budget_hours'],
             $body['budget_money'] ?? null, $body['status'] ?? 'Activo',
-            Context::getTenantId()
+            $tenantId
         ]);
         return Response::json(['success' => true]);
     }
 
     public function update() {
-        $body = Request::getBody();
-        Database::query("UPDATE projects SET client_id = ?, name = ?, budget_hours = ?, budget_money = ?, status = ? WHERE id = ?", [
+        $body     = Request::getBody();
+        $tenantId = Context::getTenantId();
+        Database::query("UPDATE projects SET client_id = ?, name = ?, budget_hours = ?, budget_money = ?, status = ? WHERE id = ? AND tenant_id = ?", [
             $body['client_id'], $body['name'], $body['budget_hours'],
-            $body['budget_money'] ?? null, $body['status'], $body['id']
+            $body['budget_money'] ?? null, $body['status'], $body['id'], $tenantId
         ]);
         return Response::json(['success' => true]);
     }
 
     public function delete($id) {
-        $used = Database::fetchOne("SELECT id FROM time_entries WHERE project_id = ? LIMIT 1", [$id]);
+        $tenantId = Context::getTenantId();
+        $used = Database::fetchOne("SELECT id FROM time_entries WHERE project_id = ? AND tenant_id = ? LIMIT 1", [$id, $tenantId]);
         if ($used) return Response::error("No se puede eliminar el proyecto porque tiene horas registradas.", 400);
-        Database::query("DELETE FROM projects WHERE id = ?", [$id]);
+        Database::query("DELETE FROM projects WHERE id = ? AND tenant_id = ?", [$id, $tenantId]);
         return Response::json(['success' => true]);
     }
 }

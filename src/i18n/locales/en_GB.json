@@ -131,7 +131,8 @@
     "next": "Next",
     "previous": "Previous",
     "error": "An unexpected error occurred",
-    "success": "Operation completed successfully"
+    "success": "Operation completed successfully",
+    "reset": "Reset"
   },
   "profile": {
     "title": "My Profile",
@@ -254,7 +255,10 @@
     "no_comments": "No comments",
     "warnings_8h": "Warning: You will exceed 8 hours daily",
     "admin_no_track": "Administrators cannot log hours. Please use a staff or commercial account for this.",
-    "no_entries": "No entries yet."
+    "no_entries": "No entries yet.",
+    "from": "From",
+    "to": "To",
+    "owner": "Owner"
   },
   "approvals": {
     "title": "Time Approvals",

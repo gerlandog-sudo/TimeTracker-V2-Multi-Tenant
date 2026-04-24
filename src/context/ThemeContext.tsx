@@ -15,6 +15,7 @@ interface SystemConfig {
   color_submitted: string;
   color_draft: string;
   sound_enabled: boolean | number;
+  status?: string;
 }
 
 interface Permission {
@@ -51,7 +52,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     color_rejected: '#ef4444',
     color_submitted: '#eab308',
     color_draft: '#9ca3af',
-    sound_enabled: true
+    sound_enabled: true,
+    status: 'active'
   });
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [isReady, setIsReady] = useState(false);

@@ -84,11 +84,6 @@ const Profile: React.FC = () => {
 
   return (
     <div className="max-w-2xl mx-auto space-y-8">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('profile.title')}</h1>
-        <p className="text-gray-500">{t('profile.personal_info')}</p>
-      </div>
-
       <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
           {error && (
@@ -156,7 +151,6 @@ const Profile: React.FC = () => {
             </div>
 
             <div className="pt-4 border-t border-gray-50">
-              <h3 className="text-sm font-bold text-gray-900 mb-4">{t('profile.change_password')}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-xs font-bold text-gray-400 uppercase mb-1 ml-1">{t('profile.new_password')}</label>

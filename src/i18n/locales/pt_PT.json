@@ -131,7 +131,8 @@
     "next": "Próximo",
     "previous": "Anterior",
     "error": "Ocorreu um erro inesperado",
-    "success": "Operação realizada com sucesso"
+    "success": "Operação realizada com sucesso",
+    "reset": "Limpar"
   },
   "profile": {
     "title": "O Meu Perfil",
@@ -250,7 +251,10 @@
     "no_comments": "Sem comentários",
     "warnings_8h": "Atenção: Irá ultrapassar as 8 horas diárias",
     "admin_no_track": "Os administradores não podem registar horas. Por favor, utilize uma conta de staff ou comercial para esta tarefa.",
-    "no_entries": "Ainda não existem registos."
+    "no_entries": "Ainda não existem registos.",
+    "from": "De",
+    "to": "Até",
+    "owner": "Proprietário"
   },
   "approvals": {
     "title": "Aprovação de Horas",

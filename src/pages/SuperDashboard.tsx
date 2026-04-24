@@ -67,11 +67,6 @@ const SuperDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 pb-12">
-      <header>
-        <h1 className="text-3xl font-bold text-gray-900 tracking-tight">{t('super.dashboard_title')}</h1>
-        <p className="text-gray-500 mt-1">{t('super.dashboard_subtitle')}</p>
-      </header>
-
       {/* Main Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {cards.map((card, i) => (

@@ -128,7 +128,7 @@ Formato: texto plano. Usa un tono que brinde poder de negociación.`;
         contents: prompt,
       });
 
-      setSimulationResult(response.text || t('reports.sim_fail'));
+      setSimulationResult(response.response.text() || t('reports.sim_fail'));
       notifySuccess(t('reports.simulation_complete', 'Simulación completada con éxito'));
     } catch (err) {
       console.error('Simulation error:', err);
@@ -179,7 +179,7 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
           contents: prompt,
         });
 
-        const insight = response.text || t('reports.insight_error');
+        const insight = response.response.text() || t('reports.insight_error');
         
         sessionStorage.setItem(cacheKey, insight);
         setApiKeyError(false);

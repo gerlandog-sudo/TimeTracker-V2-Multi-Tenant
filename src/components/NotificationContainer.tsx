@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { CheckCircle2, XCircle, Info, AlertTriangle, X } from 'lucide-react';
+import { CheckCircle2, XCircle, Info, AlertTriangle, X, AlertOctagon } from 'lucide-react';
 
 interface Notification {
   id: string;
   message: string;
-  type: 'success' | 'error' | 'info' | 'warning';
+  type: 'success' | 'error' | 'info' | 'warning' | 'suspended';
 }
 
-// Escuchamos un evento personalizado para mostrar notificaciones sin necesidad de pasar el context por todos lados si no es posible
-// aunque usaremos el context principalmente.
 const NotificationContainer: React.FC = () => {
   const [notifications, setNotifications] = useState<Notification[]>([]);
 
@@ -18,10 +16,12 @@ const NotificationContainer: React.FC = () => {
       const newNotif = e.detail;
       setNotifications(prev => [...prev, newNotif]);
       
-      // Auto-remove after 5 seconds
+      // Persistencia extendida para notificaciones de suspensión (15s), normal (5s)
+      const duration = newNotif.type === 'suspended' ? 15000 : 5000;
+      
       setTimeout(() => {
         setNotifications(prev => prev.filter(n => n.id !== newNotif.id));
-      }, 5000);
+      }, duration);
     };
 
     window.addEventListener('add-notification', handleAdd);
@@ -37,6 +37,7 @@ const NotificationContainer: React.FC = () => {
       case 'success': return <CheckCircle2 className="w-5 h-5 text-emerald-500" />;
       case 'error':   return <XCircle className="w-5 h-5 text-rose-500" />;
       case 'warning': return <AlertTriangle className="w-5 h-5 text-amber-500" />;
+      case 'suspended': return <AlertOctagon className="w-5 h-5 text-purple-600" />;
       default:        return <Info className="w-5 h-5 text-blue-500" />;
     }
   };
@@ -46,6 +47,7 @@ const NotificationContainer: React.FC = () => {
       case 'success': return 'border-emerald-500 bg-emerald-50/90 text-emerald-900';
       case 'error':   return 'border-rose-500 bg-rose-50/90 text-rose-900';
       case 'warning': return 'border-amber-500 bg-amber-50/90 text-amber-900';
+      case 'suspended': return 'border-purple-500 bg-purple-50/95 text-purple-900 shadow-purple-200/50';
       default:        return 'border-blue-500 bg-blue-50/90 text-blue-900';
     }
   };

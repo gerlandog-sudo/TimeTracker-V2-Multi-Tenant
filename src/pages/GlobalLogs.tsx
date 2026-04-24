@@ -104,43 +104,35 @@ const GlobalLogs: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-12">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-3">
-            <FileText className="w-8 h-8 text-indigo-500" /> {t('super.logs_title')}
-          </h1>
-          <p className="text-gray-500 text-sm">{t('super.logs_subtitle')}</p>
-        </div>
-        <button 
-          onClick={() => fetchLogs(1)}
-          disabled={loading}
-          className="p-2.5 bg-white border border-gray-200 rounded-xl hover:bg-gray-50 transition-all text-gray-600 disabled:opacity-50"
-          title={t('common.refresh')}
-        >
-          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
-        </button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-4">
-        <div className="relative flex-1 max-w-xl">
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
+        <div className="relative flex-1 min-w-[300px]">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input 
             type="text"
             placeholder={t('super.search_placeholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all shadow-sm"
+            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all shadow-sm text-sm"
           />
         </div>
         
         <button 
           onClick={() => setShowFilters(!showFilters)}
           className={`flex items-center gap-2 px-4 py-3 rounded-2xl border transition-all ${
-            showFilters ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+            showFilters ? 'bg-indigo-600 border-indigo-600 text-white shadow-lg shadow-indigo-200' : 'bg-gray-50 border-gray-200 text-gray-600 hover:bg-gray-100'
           }`}
         >
           <Filter className="w-5 h-5" />
           <span className="text-sm font-semibold">{t('common.filters', 'Filtros')}</span>
+        </button>
+
+        <button 
+          onClick={() => fetchLogs(1)}
+          disabled={loading}
+          className="flex items-center gap-2 px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl hover:bg-gray-100 transition-all text-gray-600 disabled:opacity-50"
+        >
+          <RefreshCw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
+          <span className="text-sm font-semibold">{t('common.refresh', 'Actualizar')}</span>
         </button>
 
         {(Object.values(filters).some(v => v !== '') || searchTerm !== '') && (

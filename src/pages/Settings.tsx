@@ -317,8 +317,7 @@ const Settings: React.FC = () => {
         api.post('/permissions', { role_id: p.role_id, feature: p.feature, can_access: p.can_access })
       ));
       await refreshConfig();
-      setSuccess(true);
-      setTimeout(() => setSuccess(false), 3000);
+      notifySuccess(t('config.save_success'));
     } catch (err) {
       console.error('Error saving permissions:', err);
       setError('Error al guardar los permisos.');
@@ -426,50 +425,41 @@ const Settings: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('config.title')}</h1>
-          <p className="text-gray-500">{t('config.subtitle')}</p>
+      {/* Tabs - Solo mostrar si no es Super Admin o si hay más de una pestaña */}
+      {!(user?.is_super_admin === true || user?.is_super_admin === 1 || user?.is_super_admin === "1") && (
+        <div className="flex gap-2 border-b border-gray-200">
+          <button 
+            onClick={() => setActiveTab('general')}
+            className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'general' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            {t('config.tab_general')}
+          </button>
+          <button 
+            onClick={() => setActiveTab('permissions')}
+            className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'permissions' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            {t('config.tab_permissions')}
+          </button>
+          <button 
+            onClick={() => setActiveTab('positions')}
+            className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'positions' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            {t('config.tab_positions')}
+          </button>
+          <button 
+            onClick={() => setActiveTab('tasks')}
+            className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'tasks' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            {t('config.tab_tasks')}
+          </button>
+          <button 
+            onClick={() => setActiveTab('costs')}
+            className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'costs' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
+          >
+            {t('config.tab_costs')}
+          </button>
         </div>
-      </div>
-
-      {/* Tabs */}
-      <div className="flex gap-2 border-b border-gray-200">
-        <button 
-          onClick={() => setActiveTab('general')}
-          className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'general' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-        >
-          {t('config.tab_general')}
-        </button>
-        {!(user?.is_super_admin === true || user?.is_super_admin === 1 || user?.is_super_admin === "1") && (
-          <>
-            <button 
-              onClick={() => setActiveTab('permissions')}
-              className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'permissions' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            >
-              {t('config.tab_permissions')}
-            </button>
-            <button 
-              onClick={() => setActiveTab('positions')}
-              className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'positions' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            >
-              {t('config.tab_positions')}
-            </button>
-            <button 
-              onClick={() => setActiveTab('tasks')}
-              className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'tasks' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            >
-              {t('config.tab_tasks')}
-            </button>
-            <button 
-              onClick={() => setActiveTab('costs')}
-              className={`px-6 py-3 text-sm font-medium transition-all border-b-2 ${activeTab === 'costs' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'}`}
-            >
-              {t('config.tab_costs')}
-            </button>
-          </>
-        )}
-      </div>
+      )}
 
       {activeTab === 'general' ? (
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

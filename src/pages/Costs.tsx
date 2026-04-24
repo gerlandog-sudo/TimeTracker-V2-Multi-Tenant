@@ -87,13 +87,6 @@ const CostsPage: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('costs.title')}</h1>
-          <p className="text-gray-500">{t('costs.subtitle')}</p>
-        </div>
-      </div>
-
       {/* Filters */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap gap-4 items-end">
         <div className="flex-1 min-w-[150px]">

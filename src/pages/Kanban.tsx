@@ -104,6 +104,7 @@ const KanbanPage: React.FC = () => {
   const [showConfirmDoneModal, setShowConfirmDoneModal] = useState(false);
   const [selectedTaskForDone, setSelectedTaskForDone] = useState<KanbanTask | null>(null);
   const [doneDescription, setDoneDescription] = useState('');
+  const [doneHours, setDoneHours] = useState('');
   
   const newTaskRef = useRef<HTMLSelectElement>(null);
   const editTaskRef = useRef<HTMLSelectElement>(null);
@@ -373,23 +374,7 @@ const KanbanPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t('kanban.title')}</h1>
-          <p className="text-gray-500">{t('kanban.subtitle')}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button 
-            onClick={() => setShowNewTaskModal(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-medium whitespace-nowrap"
-          >
-            <Plus className="w-5 h-5" />
-            {t('kanban.new_task')}
-          </button>
-        </div>
-      </div>
-
-      {/* Filters */}
+      {/* Filters & Actions */}
       <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
         <div className="flex-1 min-w-[200px] relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -430,6 +415,14 @@ const KanbanPage: React.FC = () => {
             {t('config.show_archived_column', 'Ver Columna Archivo')}
           </span>
         </label>
+
+        <button 
+          onClick={() => setShowNewTaskModal(true)}
+          className="flex items-center gap-2 px-6 py-2.5 bg-primary text-white rounded-xl hover:bg-primary/90 transition-all font-bold shadow-lg shadow-primary/20 whitespace-nowrap"
+        >
+          <Plus className="w-5 h-5" />
+          {t('kanban.new_task')}
+        </button>
       </div>
 
       {/* Kanban Board */}

@@ -2,12 +2,14 @@ import React, { createContext, useContext, useCallback } from 'react';
 import NotificationContainer from '../components/NotificationContainer';
 import { useTheme } from './ThemeContext';
 
-type NotificationType = 'success' | 'error' | 'info' | 'warning';
+type NotificationType = 'success' | 'error' | 'info' | 'warning' | 'suspended';
 
 interface NotificationContextType {
   notify: (message: string, type?: NotificationType) => void;
   success: (message: string) => void;
   error: (message: string) => void;
+  info: (message: string) => void;
+  suspended: (message: string) => void;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
@@ -42,9 +44,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
 
     const success = useCallback((msg: string) => notify(msg, 'success'), [notify]);
     const error   = useCallback((msg: string) => notify(msg, 'error'),   [notify]);
+    const info    = useCallback((msg: string) => notify(msg, 'info'),    [notify]);
+    const suspended = useCallback((msg: string) => notify(msg, 'suspended'), [notify]);
 
     return (
-        <NotificationContext.Provider value={{ notify, success, error }}>
+        <NotificationContext.Provider value={{ notify, success, error, info, suspended }}>
             {children}
             <NotificationContainer />
         </NotificationContext.Provider>

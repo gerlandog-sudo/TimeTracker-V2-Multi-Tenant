@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Plus, Briefcase, Target, DollarSign, Loader2, Filter, Trash2, AlertCircle, AlertTriangle, X } from 'lucide-react';
+import { Plus, Briefcase, Target, DollarSign, Loader2, Filter, Trash2, AlertCircle, AlertTriangle, X, Search } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import api from '../lib/api';
 import { formatCurrency } from '../lib/formatters';
@@ -39,6 +39,7 @@ const Projects: React.FC = () => {
     budget_money: '',
     status: 'Activo'
   });
+  const [searchTerm, setSearchTerm] = useState('');
   const firstInputRef = useRef<HTMLSelectElement>(null);
 
   useEffect(() => {
@@ -190,27 +191,32 @@ const Projects: React.FC = () => {
         )}
       </AnimatePresence>
 
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('projects.title')}</h1>
-          <p className="text-gray-500">{t('projects.subtitle')}</p>
-          <div className="flex flex-wrap gap-2 mt-3">
-            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-green-100 text-green-700">{t('projects.active')}</span>
-            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">{t('projects.paused')}</span>
-            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700">{t('projects.billed')}</span>
-            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">{t('projects.finished')}</span>
-          </div>
+      {/* Filters & Actions */}
+      <div className="bg-white p-4 rounded-2xl border border-gray-100 shadow-sm flex flex-wrap items-center gap-4">
+        <div className="flex-1 min-w-[300px] relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <input 
+            type="text"
+            placeholder={t('projects.search_placeholder', 'Buscar proyectos o clientes...')}
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-gray-50 border border-gray-100 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all shadow-sm text-sm"
+          />
         </div>
+        
         <button 
           onClick={() => setModalOpen(true)}
-          className="bg-primary text-white font-semibold py-2 px-6 rounded-lg hover:bg-primary/90 transition-all flex items-center gap-2"
+          className="bg-primary text-white font-bold py-3 px-6 rounded-2xl hover:bg-primary/90 transition-all flex items-center gap-2 shadow-lg shadow-primary/20 whitespace-nowrap"
         >
           <Plus className="w-5 h-5" /> {t('projects.new_project')}
         </button>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {projects.map((project) => (
+        {projects.filter(p => 
+          p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+          p.client_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        ).map((project) => (
           <div 
             key={project.id} 
             onClick={() => handleEdit(project)}

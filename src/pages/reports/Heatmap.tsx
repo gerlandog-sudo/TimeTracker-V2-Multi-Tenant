@@ -137,11 +137,7 @@ const HeatmapPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{t('reports.heatmap_title')}</h1>
-          <p className="text-gray-500">{t('reports.heatmap_subtitle')}</p>
-        </div>
+      <div className="flex justify-end items-center">
         
         <div className="flex items-center gap-4">
           <div className="flex bg-gray-100 p-1 rounded-lg">
