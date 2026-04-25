@@ -156,6 +156,15 @@ Router::get('reports/heatmap',      'ReportsController', 'getHeatmap');
 Router::get('reports/audit',        'ReportsController', 'getAuditLog');
 Router::get('predictive-alerts',    'ReportsController', 'getPredictiveAlerts');
 
+// Reportes Insights (Ad-hoc Query Engine)
+Router::get('reports/insights/catalog',       'InsightsController', 'getCatalog');
+Router::post('reports/insights/run',          'InsightsController', 'run');
+Router::get('reports/insights/views',         'InsightsController', 'listViews');
+Router::post('reports/insights/views',        'InsightsController', 'saveView');
+Router::put('reports/insights/views/{id}',    'InsightsController', 'updateView');
+Router::delete('reports/insights/views/{id}', 'InsightsController', 'deleteView');
+Router::post('reports/insights/ai-assist',    'InsightsController', 'aiAssist');
+
 // Clientes
 Router::get('clients',              'ClientsController', 'list');
 Router::post('clients',             'ClientsController', 'create');

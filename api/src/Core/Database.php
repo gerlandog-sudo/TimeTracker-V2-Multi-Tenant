@@ -10,7 +10,8 @@ class Database {
 
     public static function connect() {
         if (self::$pdo === null) {
-            $config = require __DIR__ . '/../../config.php';
+            $config = require_once __DIR__ . '/../../config.php';
+            if ($config === true) $config = []; // Si ya fue incluido, require_once devuelve true
             
             // Detectar si usamos constantes (modelo viejo) o array (modelo nuevo)
             $host = defined('DB_HOST') ? DB_HOST : ($config['db_host'] ?? 'localhost');

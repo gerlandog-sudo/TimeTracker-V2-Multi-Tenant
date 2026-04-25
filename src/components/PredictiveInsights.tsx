@@ -39,9 +39,9 @@ const PredictiveInsights: React.FC = () => {
   const [positions, setPositions] = useState<PositionCost[]>([]);
   const [loading, setLoading] = useState(true);
   const [apiKeyError, setApiKeyError] = useState(false);
-  
+
   // Simulation states
-  const [simulationAlert, setSimulationAlert] = useState<{alert: PredictiveAlert, index: number} | null>(null);
+  const [simulationAlert, setSimulationAlert] = useState<{ alert: PredictiveAlert, index: number } | null>(null);
   const [selectedPosition, setSelectedPosition] = useState<number | null>(null);
   const [simulating, setSimulating] = useState(false);
   const [simulationResult, setSimulationResult] = useState<string | null>(null);
@@ -55,7 +55,7 @@ const PredictiveInsights: React.FC = () => {
 
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
-    
+
     const initialize = async () => {
       try {
         setLoading(true);
@@ -63,10 +63,10 @@ const PredictiveInsights: React.FC = () => {
           api.get('/predictive-alerts'),
           api.get('/position-costs')
         ]);
-        
+
         const apiAlerts = alertsRes.data.alerts || [];
         setPositions(positionsRes.data || []);
-        
+
         setAlerts(apiAlerts.map((a: any) => ({ ...a, loadingInsight: true })));
         setLoading(false);
 
@@ -74,7 +74,7 @@ const PredictiveInsights: React.FC = () => {
         timeoutId = setTimeout(() => {
           generateInsights(apiAlerts);
         }, 800);
-    } catch (err) {
+      } catch (err) {
         console.error('Error fetching predictive alerts:', err);
         notifyError(t('reports.no_insights'));
         setLoading(false);
@@ -82,7 +82,7 @@ const PredictiveInsights: React.FC = () => {
     };
 
     initialize();
-    
+
     return () => {
       if (timeoutId) clearTimeout(timeoutId);
     };
@@ -90,7 +90,7 @@ const PredictiveInsights: React.FC = () => {
 
   const handleSimulate = async () => {
     if (!simulationAlert || !selectedPosition) return;
-    
+
     const pos = positions.find(p => p.id === selectedPosition);
     if (!pos) return;
 
@@ -100,7 +100,7 @@ const PredictiveInsights: React.FC = () => {
     try {
       const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
       const ai = new GoogleGenAI({ apiKey });
-      
+
       const prompt = `Eres un Experto en Operaciones SaaS y Optimizacion de Rentabilidad.
 Realiza una simulación rápida sobre el impacto de añadir un nuevo perfil al proyecto actual.
 IMPORTANTE: Debes responder ESTRICTAMENTE en el idioma correspondiente a este código de locale: "${i18n.language}". Si es "en_US" o "en_GB", responde en Inglés. Si es "pt_BR" o "pt_PT", responde en Portugués. Si es "es_AR" o "es_ES", responde en Español.
@@ -140,9 +140,9 @@ Formato: texto plano. Usa un tono que brinde poder de negociación.`;
 
   const generateInsights = async (apiAlerts: PredictiveAlert[]) => {
     const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-    
+
     const ai = new GoogleGenAI({ apiKey });
-    
+
     apiAlerts.forEach(async (alert, index) => {
       const cacheKey = getCacheKey(alert);
       const cachedInsight = sessionStorage.getItem(cacheKey);
@@ -180,7 +180,7 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
         });
 
         const insight = response.response.text() || t('reports.insight_error');
-        
+
         sessionStorage.setItem(cacheKey, insight);
         setApiKeyError(false);
 
@@ -224,7 +224,7 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
         <Sparkles className="w-5 h-5 text-accent" />
         <h3 className="text-lg font-bold text-gray-800">{t('reports.predictive_title', 'Alertas Predictivas de IA')}</h3>
       </div>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <AnimatePresence>
           {alerts.map((alert, idx) => (
@@ -233,16 +233,14 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: idx * 0.1 }}
-              className={`p-5 rounded-2xl border-l-4 shadow-sm relative overflow-hidden bg-white ${
-                alert.priority === 'High' ? 'border-red-500' : 
-                alert.priority === 'Medium' ? 'border-amber-500' : 'border-blue-500'
-              }`}
+              className={`p-5 rounded-2xl border-l-4 shadow-sm relative overflow-hidden bg-white ${alert.priority === 'High' ? 'border-red-500' :
+                  alert.priority === 'Medium' ? 'border-amber-500' : 'border-blue-500'
+                }`}
             >
               {/* Decorative accent */}
-              <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5 rounded-full ${
-                alert.priority === 'High' ? 'bg-red-500' : 
-                alert.priority === 'Medium' ? 'bg-amber-500' : 'bg-blue-500'
-              }`} />
+              <div className={`absolute top-0 right-0 w-24 h-24 -mr-8 -mt-8 opacity-5 rounded-full ${alert.priority === 'High' ? 'bg-red-500' :
+                  alert.priority === 'Medium' ? 'bg-amber-500' : 'bg-blue-500'
+                }`} />
 
               <div className="flex justify-between items-start mb-3">
                 <div>
@@ -251,14 +249,13 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
                     <ArrowRight className="w-3.5 h-3.5 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                   </h4>
                   <div className="flex gap-2 mt-1">
-                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                      ['high', 'alta', 'critical'].includes(alert.priority.toLowerCase()) ? 'bg-red-100 text-red-700' : 
-                      ['medium', 'media'].includes(alert.priority.toLowerCase()) ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
-                    }`}>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${['high', 'alta', 'critical'].includes(alert.priority.toLowerCase()) ? 'bg-red-100 text-red-700' :
+                        ['medium', 'media'].includes(alert.priority.toLowerCase()) ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                      }`}>
                       {t('kanban.priority_label')} {
-                        ['high', 'alta', 'critical'].includes(alert.priority.toLowerCase()) ? t('reports.priority_critical') : 
-                        ['medium', 'media'].includes(alert.priority.toLowerCase()) ? t('reports.priority_medium') : 
-                        t('reports.priority_low')
+                        ['high', 'alta', 'critical'].includes(alert.priority.toLowerCase()) ? t('reports.priority_critical') :
+                          ['medium', 'media'].includes(alert.priority.toLowerCase()) ? t('reports.priority_medium') :
+                            t('reports.priority_low')
                       }
                     </span>
                   </div>
@@ -283,18 +280,17 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
                     <p className="text-xs font-bold text-gray-800">{alert.metrics.seniority_mix.senior_percent}%</p>
                   </div>
                   <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className={`h-full transition-all duration-1000 ${alert.metrics.seniority_mix.senior_percent > 40 ? 'bg-red-400' : 'bg-indigo-400'}`} 
+                    <div
+                      className={`h-full transition-all duration-1000 ${alert.metrics.seniority_mix.senior_percent > 40 ? 'bg-red-400' : 'bg-indigo-400'}`}
                       style={{ width: `${alert.metrics.seniority_mix.senior_percent}%` }}
                     />
                   </div>
                 </div>
               </div>
 
-              <div className={`p-3 rounded-xl border ${
-                alert.loadingInsight ? 'bg-gray-50 border-gray-100 animate-pulse' : 
-                alert.priority === 'High' ? 'bg-red-50 border-red-100' : 'bg-indigo-50 border-indigo-100'
-              }`}>
+              <div className={`p-3 rounded-xl border ${alert.loadingInsight ? 'bg-gray-50 border-gray-100 animate-pulse' :
+                  alert.priority === 'High' ? 'bg-red-50 border-red-100' : 'bg-indigo-50 border-indigo-100'
+                }`}>
                 {alert.loadingInsight ? (
                   <div className="flex items-center gap-2">
                     <Loader2 className="w-3.5 h-3.5 text-gray-400 animate-spin" />
@@ -310,7 +306,7 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
                         </>
                       ) : alert.insight}
                     </p>
-                    <button 
+                    <button
                       onClick={() => {
                         setSimulationAlert({ alert, index: idx });
                         setSelectedPosition(null);
@@ -333,7 +329,7 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
       <AnimatePresence>
         {simulationAlert && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.9 }}
@@ -359,8 +355,8 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
 
                 <div className="space-y-3">
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-widest px-1">{t('reports.profile_to_add')}</label>
-                  <select 
-                    value={selectedPosition || ''} 
+                  <select
+                    value={selectedPosition || ''}
                     onChange={(e) => setSelectedPosition(Number(e.target.value))}
                     className="w-full p-4 bg-white border border-gray-200 rounded-2xl text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all outline-none"
                   >
@@ -372,7 +368,7 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
                 </div>
 
                 {simulationResult && (
-                  <motion.div 
+                  <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     className="p-5 bg-emerald-50 border border-emerald-100 rounded-2xl"
@@ -388,13 +384,13 @@ Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción 
               </div>
 
               <div className="p-6 bg-gray-50/50 border-t border-gray-100 flex gap-3">
-                <button 
+                <button
                   onClick={() => setSimulationAlert(null)}
                   className="flex-1 px-6 py-3 font-bold text-gray-600 hover:text-gray-900 transition-colors uppercase text-xs tracking-widest"
                 >
                   {t('common.cancel')}
                 </button>
-                <button 
+                <button
                   onClick={handleSimulate}
                   disabled={!selectedPosition || simulating}
                   className="flex-1 px-6 py-4 bg-accent hover:bg-accent/90 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-accent/20 uppercase text-xs tracking-widest"

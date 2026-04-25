@@ -164,26 +164,32 @@ const CostsPage: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 mb-4">
-            <DollarSign className="w-5 h-5" />
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+            <DollarSign className="w-6 h-6" />
           </div>
-          <p className="text-sm font-medium text-gray-500">{t('costs.total_cost')}</p>
-          <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalCost)}</p>
+          <div className="flex-1 text-right">
+            <p className="text-sm font-medium text-gray-500">{t('costs.total_cost')}</p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalCost)}</p>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 mb-4">
-            <TrendingUp className="w-5 h-5" />
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center text-accent">
+            <TrendingUp className="w-6 h-6" />
           </div>
-          <p className="text-sm font-medium text-gray-500">{t('costs.avg_margin')}</p>
-          <p className="text-2xl font-bold text-gray-900">{margin.toFixed(1)}%</p>
+          <div className="flex-1 text-right">
+            <p className="text-sm font-medium text-gray-500">{t('costs.avg_margin')}</p>
+            <p className="text-2xl font-bold text-gray-900">{margin.toFixed(1)}%</p>
+          </div>
         </div>
-        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-          <div className="w-10 h-10 rounded-lg bg-purple-50 flex items-center justify-center text-purple-600 mb-4">
-            <CreditCard className="w-5 h-5" />
+        <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+            <CreditCard className="w-6 h-6" />
           </div>
-          <p className="text-sm font-medium text-gray-500">{t('costs.est_revenue')}</p>
-          <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
+          <div className="flex-1 text-right">
+            <p className="text-sm font-medium text-gray-500">{t('costs.est_revenue')}</p>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalRevenue)}</p>
+          </div>
         </div>
       </div>
 

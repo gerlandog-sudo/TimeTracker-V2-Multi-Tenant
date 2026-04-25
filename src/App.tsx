@@ -19,6 +19,7 @@ import Profile from './pages/Profile';
 import HeatmapPage from './pages/reports/Heatmap';
 import AuditLogPage from './pages/reports/AuditLog';
 import PredictiveAlertsPage from './pages/reports/PredictiveAlerts';
+import InsightsPage from './pages/reports/Insights';
 import SuperDashboard from './pages/SuperDashboard';
 import TenantsList from './pages/TenantsList';
 import GlobalLogs from './pages/GlobalLogs';
@@ -213,6 +214,12 @@ const AppContent = () => {
         <Route path="/reports/predictive" element={
           <ProtectedRoute feature="report_audit">
             <PredictiveAlertsPage />
+          </ProtectedRoute>
+        } />
+
+        <Route path="/reports/insights" element={
+          <ProtectedRoute feature="report_custom">
+            <InsightsPage />
           </ProtectedRoute>
         } />
 

@@ -82,7 +82,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
 
   // Auto-collapse sidebar on Kanban (Tasks) page to maximize space, expand on others
   useEffect(() => {
-    if (location.pathname === '/kanban') {
+    if (location.pathname === '/kanban' || location.pathname === '/reports/insights') {
       setSidebarOpen(false);
     } else {
       setSidebarOpen(true);
@@ -146,7 +146,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         { name: t('reports.heatmaps'), path: '/reports/heatmap', feature: 'report_heatmaps' },
         { name: t('reports.audit'), path: '/reports/audit', feature: 'report_audit' },
         { name: t('reports.ai'), path: '/reports/predictive', feature: 'report_ai' },
-        { name: t('reports.custom'), path: '/reports/custom', feature: 'report_custom' },
+        { name: t('reports.insights'), path: '/reports/insights', feature: 'report_custom' },
       ]
     },
     { name: t('menu.users'), path: '/users', icon: Users, feature: 'users' },
