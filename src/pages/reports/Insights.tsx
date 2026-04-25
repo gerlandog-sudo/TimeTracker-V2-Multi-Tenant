@@ -181,8 +181,9 @@ const InsightsPage: React.FC = () => {
     console.log("AI Assist: Iniciando...", smartSearch);
     setIsAiLoading(true);
     try {
-      const apiKey = "AIzaSyClU9zAJqF04WR2XRx58_zp6LatkFAndIg";
-      const ai = new GoogleGenAI({ apiKey });
+      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      if (!apiKey) throw new Error("API Key de Gemini no configurada en el entorno.");
+      const ai = new GoogleGenAI(apiKey);
 
       const catalogContext = catalog.map(f => `${f.key}: ${i18n.language.startsWith('en') ? f.label_en : f.label_es}`).join(", ");
       const today = new Date();
