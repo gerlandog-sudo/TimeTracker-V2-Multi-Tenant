@@ -20,7 +20,9 @@ export interface ReportDefinition {
   metrics: string[];
   filters: ReportFilter[];
   sort: ReportSort[];
+  grouping: string[]; // NEW: For control breaks (hierarchical grouping)
   limit: number;
+  description?: string;
   page?: number;
   view_id?: number;
 }

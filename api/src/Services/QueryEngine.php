@@ -46,6 +46,14 @@ class QueryEngine {
             'financial'  => true,
             'table_deps' => ['projects'],
         ],
+        'project.created_at' => [
+            'type'       => 'dimension',
+            'sql'        => 'p.created_at',
+            'label_es'   => 'Fecha de Creación Proyecto',
+            'label_en'   => 'Project Creation Date',
+            'financial'  => false,
+            'table_deps' => ['projects'],
+        ],
         'client.name' => [
             'type'       => 'dimension',
             'sql'        => 'c.name',
@@ -67,6 +75,14 @@ class QueryEngine {
             'sql'        => 'c.tax_id',
             'label_es'   => 'Tax ID / CUIT',
             'label_en'   => 'Tax ID',
+            'financial'  => false,
+            'table_deps' => ['projects', 'clients'],
+        ],
+        'client.address' => [
+            'type'       => 'dimension',
+            'sql'        => 'c.address',
+            'label_es'   => 'Dirección Cliente',
+            'label_en'   => 'Client Address',
             'financial'  => false,
             'table_deps' => ['projects', 'clients'],
         ],
@@ -112,12 +128,28 @@ class QueryEngine {
             'financial'  => false,
             'table_deps' => ['users', 'positions'],
         ],
+        'user.seniority' => [
+            'type'       => 'dimension',
+            'sql'        => 'u.seniority',
+            'label_es'   => 'Seniority Colaborador',
+            'label_en'   => 'Member Seniority',
+            'financial'  => false,
+            'table_deps' => ['users'],
+        ],
         'user.hourly_cost' => [
             'type'       => 'dimension',
             'sql'        => 'u.hourly_cost',
             'label_es'   => 'Costo Hora Colaborador',
             'label_en'   => 'Member Hourly Cost',
             'financial'  => true,
+            'table_deps' => ['users'],
+        ],
+        'user.weekly_capacity' => [
+            'type'       => 'dimension',
+            'sql'        => 'u.weekly_capacity',
+            'label_es'   => 'Capacidad Semanal (Horas)',
+            'label_en'   => 'Weekly Capacity',
+            'financial'  => false,
             'table_deps' => ['users'],
         ],
 
@@ -146,6 +178,14 @@ class QueryEngine {
             'financial'  => false,
             'table_deps' => [],
         ],
+        'task.name' => [
+            'type'       => 'dimension',
+            'sql'        => 'tm.name',
+            'label_es'   => 'Tarea Maestra',
+            'label_en'   => 'Master Task',
+            'financial'  => false,
+            'table_deps' => ['tasks_master'],
+        ],
 
         // ── TRANSACCIONAL: KANBAN ────────────────────────────────────────────
         'kanban.description' => [
@@ -169,6 +209,14 @@ class QueryEngine {
             'sql'        => 'kt.status',
             'label_es'   => 'Estado Kanban',
             'label_en'   => 'Kanban Status',
+            'financial'  => false,
+            'table_deps' => ['kanban_tasks'],
+        ],
+        'kanban.created_at' => [
+            'type'       => 'dimension',
+            'sql'        => 'kt.created_at',
+            'label_es'   => 'Fecha Creación Kanban',
+            'label_en'   => 'Kanban Created At',
             'financial'  => false,
             'table_deps' => ['kanban_tasks'],
         ],
@@ -208,6 +256,14 @@ class QueryEngine {
             'financial'  => false,
             'table_deps' => [],
         ],
+        'entries.count' => [
+            'type'       => 'metric',
+            'sql'        => 'COUNT(te.id)',
+            'label_es'   => 'Cantidad de Registros',
+            'label_en'   => 'Entry Count',
+            'financial'  => false,
+            'table_deps' => [],
+        ],
         'kanban.estimated_sum' => [
             'type'       => 'metric',
             'sql'        => 'SUM(kt.estimated_hours)',
@@ -231,6 +287,14 @@ class QueryEngine {
             'label_en'   => 'Total Op. Cost',
             'financial'  => true,
             'table_deps' => ['users'],
+        ],
+        'budget.usage_pct' => [
+            'type'       => 'metric',
+            'sql'        => 'ROUND((SUM(te.hours) / NULLIF(MAX(p.budget_hours), 0)) * 100, 2)',
+            'label_es'   => 'Uso del Presupuesto Horas (%)',
+            'label_en'   => 'Budget Usage (%)',
+            'financial'  => false,
+            'table_deps' => ['projects'],
         ],
         'margin.calc' => [
             'type'       => 'metric',
@@ -264,23 +328,31 @@ class QueryEngine {
     public static function validate(array $def): ?string {
         $dimensions = $def['dimensions'] ?? [];
         $metrics    = $def['metrics']    ?? [];
+        $grouping   = $def['grouping']   ?? [];
+        
         if (empty($dimensions) && empty($metrics)) return 'Debe seleccionar al menos una dimensión o métrica.';
-        foreach ($dimensions as $d) if (!isset(self::$CATALOG[$d])) return "Dimensión no válida: $d";
-        foreach ($metrics as $m) if (!isset(self::$CATALOG[$m])) return "Métrica no válida: $m";
+        
+        foreach (array_merge($dimensions, $metrics, $grouping) as $d) {
+            if (!isset(self::$CATALOG[$d])) return "Campo no válido: $d";
+        }
         return null;
     }
 
     public static function build(array $def, int $tenantId): array {
         $dimensions = $def['dimensions'] ?? [];
         $metrics    = $def['metrics']    ?? [];
+        $grouping   = $def['grouping']   ?? [];
         $filters    = $def['filters']    ?? [];
         $sort       = $def['sort']       ?? [];
         $limit      = min((int)($def['limit'] ?? self::MAX_ROWS), self::MAX_ROWS);
         $page       = max(1, (int)($def['page'] ?? 1));
         $offset     = ($page - 1) * $limit;
 
+        // Todas las dimensiones y campos de agrupacion deben estar en el SELECT
+        $allDimensions = array_unique(array_merge($grouping, $dimensions));
+
         $requiredTables = [];
-        foreach (array_merge($dimensions, $metrics) as $key) {
+        foreach (array_merge($allDimensions, $metrics) as $key) {
             foreach (self::$CATALOG[$key]['table_deps'] as $tbl) $requiredTables[$tbl] = true;
         }
         foreach ($filters as $f) {
@@ -288,7 +360,7 @@ class QueryEngine {
         }
 
         $selectParts = [];
-        foreach ($dimensions as $key) {
+        foreach ($allDimensions as $key) {
             $alias = self::toAlias($key);
             $selectParts[] = self::$CATALOG[$key]['sql'] . " AS `$alias`";
         }
@@ -301,8 +373,8 @@ class QueryEngine {
 
         // DETERMINAR TABLA BASE
         $hasTimeEntries = false;
-        foreach (array_merge($dimensions, $metrics) as $k) {
-            if (empty(self::$CATALOG[$k]['table_deps'])) { $hasTimeEntries = true; break; }
+        foreach (array_merge($allDimensions, $metrics) as $k) {
+            if (empty(self::$CATALOG[$k]['table_deps']) || in_array('time_entries', self::$CATALOG[$k]['table_deps'])) { $hasTimeEntries = true; break; }
         }
         
         $baseTable = 'time_entries';
@@ -323,12 +395,13 @@ class QueryEngine {
         $joins = "";
 
         if ($baseTable === 'time_entries') {
-            if (isset($requiredTables['projects'])) $joins .= "\n  JOIN projects p ON te.project_id = p.id AND p.tenant_id = te.tenant_id";
-            if (isset($requiredTables['clients']))  $joins .= "\n  JOIN clients c ON p.client_id = c.id AND c.tenant_id = te.tenant_id";
-            if (isset($requiredTables['users']))    $joins .= "\n  JOIN users u ON te.user_id = u.id AND u.tenant_id = te.tenant_id";
-            if (isset($requiredTables['roles']))    $joins .= "\n  JOIN roles r ON u.role_id = r.id AND r.tenant_id = te.tenant_id";
-            if (isset($requiredTables['positions']))$joins .= "\n  LEFT JOIN positions pos ON u.position_id = pos.id AND pos.tenant_id = te.tenant_id";
-            if (isset($requiredTables['kanban_tasks']))$joins .= "\n  LEFT JOIN kanban_tasks kt ON te.project_id = kt.project_id AND te.user_id = kt.user_id";
+            if (isset($requiredTables['projects']))    $joins .= "\n  JOIN projects p ON te.project_id = p.id AND p.tenant_id = te.tenant_id";
+            if (isset($requiredTables['clients']))     $joins .= "\n  JOIN clients c ON p.client_id = c.id AND c.tenant_id = te.tenant_id";
+            if (isset($requiredTables['users']))       $joins .= "\n  JOIN users u ON te.user_id = u.id AND u.tenant_id = te.tenant_id";
+            if (isset($requiredTables['roles']))       $joins .= "\n  JOIN roles r ON u.role_id = r.id AND r.tenant_id = te.tenant_id";
+            if (isset($requiredTables['positions']))   $joins .= "\n  LEFT JOIN positions pos ON u.position_id = pos.id AND pos.tenant_id = te.tenant_id";
+            if (isset($requiredTables['tasks_master']))$joins .= "\n  LEFT JOIN tasks_master tm ON te.task_id = tm.id AND tm.tenant_id = te.tenant_id";
+            if (isset($requiredTables['kanban_tasks'])) $joins .= "\n  LEFT JOIN kanban_tasks kt ON te.project_id = kt.project_id AND te.user_id = kt.user_id";
         } elseif ($baseTable === 'kanban_tasks') {
             if (isset($requiredTables['projects'])) $joins .= "\n  JOIN projects p ON kt.project_id = p.id AND p.tenant_id = kt.tenant_id";
             if (isset($requiredTables['clients']))  $joins .= "\n  JOIN clients c ON p.client_id = c.id AND c.tenant_id = kt.tenant_id";
@@ -363,22 +436,29 @@ class QueryEngine {
 
         $where = "WHERE " . implode("\n  AND ", $whereParts);
         $groupBy = '';
-        if (!empty($dimensions) && !empty($metrics)) {
-            $groupByCols = array_map(fn($k) => self::$CATALOG[$k]['sql'], $dimensions);
+        if (!empty($allDimensions) && !empty($metrics)) {
+            $groupByCols = array_map(fn($k) => self::$CATALOG[$k]['sql'], $allDimensions);
             $groupBy = "GROUP BY " . implode(', ', $groupByCols);
         }
 
-        $orderBy = '';
-        if (!empty($sort)) {
-            $sortParts = [];
-            foreach ($sort as $s) {
-                $sortKey = $s['field'] ?? '';
-                if (!isset(self::$CATALOG[$sortKey])) continue;
-                $dir = strtoupper($s['dir'] ?? 'ASC') === 'DESC' ? 'DESC' : 'ASC';
-                $sortParts[] = self::$CATALOG[$sortKey]['sql'] . " $dir";
-            }
-            if (!empty($sortParts)) $orderBy = "ORDER BY " . implode(', ', $sortParts);
+        // EL ORDEN ES CRÍTICO PARA CORTES DE CONTROL
+        // Primero agrupamos por las columnas de 'grouping' en orden.
+        $orderByParts = [];
+        foreach ($grouping as $gk) {
+            $orderByParts[] = self::$CATALOG[$gk]['sql'] . " ASC";
         }
+        
+        // Luego añadimos el ordenamiento explícito del usuario
+        foreach ($sort as $s) {
+            $sortKey = $s['field'] ?? '';
+            if (!isset(self::$CATALOG[$sortKey])) continue;
+            // Evitar duplicar si ya está en el grouping
+            if (in_array($sortKey, $grouping)) continue;
+            $dir = strtoupper($s['dir'] ?? 'ASC') === 'DESC' ? 'DESC' : 'ASC';
+            $orderByParts[] = self::$CATALOG[$sortKey]['sql'] . " $dir";
+        }
+
+        $orderBy = !empty($orderByParts) ? ("ORDER BY " . implode(', ', $orderByParts)) : "";
 
         $sql = "SELECT $select\n$from$joins\n$where\n$groupBy\n$orderBy\nLIMIT $limit OFFSET $offset";
         $countSql = "SELECT COUNT(*) AS total FROM (SELECT 1 $from$joins\n$where\n$groupBy) AS _count_wrap";
