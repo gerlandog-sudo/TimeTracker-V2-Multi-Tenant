@@ -1,7 +1,7 @@
 {
   "name": "react-example",
   "private": true,
-  "version": "2.10.039",
+  "version": "2.10.047",
   "type": "module",
   "engines": {
     "node": ">=24.0.0"
@@ -15,7 +15,6 @@
     "lint": "tsc --noEmit"
   },
   "dependencies": {
-    "@google/genai": "^1.29.0",
     "@hello-pangea/dnd": "^18.0.1",
     "@tailwindcss/vite": "^4.1.14",
     "@vitejs/plugin-react": "^5.0.4",

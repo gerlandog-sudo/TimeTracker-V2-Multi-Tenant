@@ -300,4 +300,27 @@ class InsightsController {
             Response::error('Error en Asistencia IA: ' . $e->getMessage(), 500);
         }
     }
+    // ─── POST /reports/insights/generate-text ────────────────────────────────
+    public function generateInsight(): void {
+        try {
+            $user     = Context::getUser();
+            $tenantId = Context::getTenantId();
+            $body     = Request::getBody();
+            $prompt   = trim($body['prompt'] ?? '');
+
+            if (!$prompt) {
+                Response::error('El prompt es requerido.', 422);
+                return;
+            }
+
+            $insightText = \App\Services\AiService::generateText($prompt);
+
+            Response::json([
+                'success' => true,
+                'text'    => $insightText
+            ]);
+        } catch (\Throwable $e) {
+            Response::error('Error generando insight: ' . $e->getMessage(), 500);
+        }
+    }
 }

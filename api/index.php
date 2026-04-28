@@ -164,6 +164,7 @@ Router::post('reports/insights/views',        'InsightsController', 'saveView');
 Router::put('reports/insights/views/{id}',    'InsightsController', 'updateView');
 Router::delete('reports/insights/views/{id}', 'InsightsController', 'deleteView');
 Router::post('reports/insights/ai-assist',    'InsightsController', 'aiAssist');
+Router::post('reports/insights/generate-text','InsightsController', 'generateInsight');
 
 // Clientes
 Router::get('clients',              'ClientsController', 'list');

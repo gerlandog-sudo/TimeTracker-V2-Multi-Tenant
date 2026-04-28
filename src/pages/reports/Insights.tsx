@@ -24,7 +24,6 @@ import { useTranslation } from 'react-i18next';
 import api from '../../lib/api';
 import { HierarchicalTable } from '../../components/insights/HierarchicalTable';
 import { InsightsFilterBuilder } from '../../components/insights/InsightsFilterBuilder';
-import { GoogleGenAI } from "@google/genai";
 import type { 
   CatalogField, 
   ReportDefinition, 
@@ -193,11 +192,6 @@ const ReportStudio: React.FC = () => {
   const handleAiSuggest = async () => {
     setIsAiLoading(true);
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY;
-      if (!apiKey) throw new Error("API Key de Gemini no configurada.");
-      const genAI = new GoogleGenAI({ apiKey });
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash-lite" });
-
       const catalogKeys = catalog.map(f => `${f.key} (${f.type}): ${getLabel(f.key)}`).join(', ');
       
       const prompt = `Como experto en BI y analítica para plataformas de TimeTracking, sugiereme el reporte más valioso que puedo generar con estos campos: ${catalogKeys}.
@@ -210,8 +204,8 @@ const ReportStudio: React.FC = () => {
         "description": "Explicación breve de por qué este reporte es útil"
       }`;
 
-      const res = await model.generateContent(prompt);
-      const text = res.response.text();
+      const res = await api.post('/reports/insights/generate-text', { prompt });
+      const text = res.data.text || '';
       const cleanJson = text.replace(/```json|```/gi, '').trim();
       const suggestion = JSON.parse(cleanJson);
 

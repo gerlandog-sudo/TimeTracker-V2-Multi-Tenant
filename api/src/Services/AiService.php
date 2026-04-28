@@ -6,7 +6,14 @@ use App\Services\QueryEngine;
 
 class AiService {
 
-    private const API_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+    private const MODELS = [
+        "gemma-3-4b-it",
+        "gemini-flash-latest",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash"
+    ];
+
+    private const BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/";
 
     public static function assist(string $prompt, bool $hasFinancialAccess): array {
         if (!function_exists('curl_init')) {
@@ -60,7 +67,65 @@ class AiService {
             ]
         ];
 
-        $ch = curl_init(self::API_URL . "?key=" . trim($apiKey));
+        $lastError = "";
+        foreach (self::MODELS as $model) {
+            try {
+                return self::callGemini($model, $payload, $apiKey);
+            } catch (\Exception $e) {
+                $lastError = $e->getMessage();
+                self::log("Error with model $model: " . $lastError);
+                continue; // Try next model
+            }
+        }
+
+        throw new \Exception("Gemini falló en todos los modelos disponibles. Último error: " . $lastError);
+    }
+
+    public static function generateText(string $prompt): string {
+        if (!function_exists('curl_init')) {
+            throw new \Exception("La extensión CURL no está habilitada en este servidor PHP.");
+        }
+
+        $apiKey = defined('GEMINI_API_KEY') ? GEMINI_API_KEY : '';
+        if (!$apiKey || $apiKey === 'TU_API_KEY_AQUI') {
+            throw new \Exception("Gemini API Key no configurada en api/config.php.");
+        }
+
+        $payload = [
+            "contents" => [
+                [
+                    "role" => "user",
+                    "parts" => [
+                        ["text" => $prompt]
+                    ]
+                ]
+            ],
+            "generationConfig" => [
+                "temperature" => 0.4,
+                "topK" => 1,
+                "topP" => 1,
+                "maxOutputTokens" => 1000
+            ]
+        ];
+
+        $lastError = "";
+        foreach (self::MODELS as $model) {
+            try {
+                return self::callGemini($model, $payload, $apiKey, false);
+            } catch (\Exception $e) {
+                $lastError = $e->getMessage();
+                self::log("Error with model $model in generateText: " . $lastError);
+                continue; // Try next model
+            }
+        }
+
+        throw new \Exception("Gemini falló en todos los modelos para generateText. Último error: " . $lastError);
+    }
+
+    private static function callGemini(string $model, array $payload, string $apiKey, bool $returnJson = true) {
+        $url = self::BASE_URL . $model . ":generateContent?key=" . trim($apiKey);
+        
+        $ch = curl_init($url);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
         curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
@@ -73,31 +138,47 @@ class AiService {
         $curlError = curl_error($ch);
         curl_close($ch);
 
+        // LOGGING: Guardar respuesta antes de parsear
+        $safeResponse = str_replace($apiKey, '***HIDDEN***', (string)$response);
+        self::log("Model: $model | HTTP: $httpCode | Response: " . $safeResponse);
+
         if ($curlError) {
-            throw new \Exception("Error de conexión CURL hacia Google: " . $curlError);
+            throw new \Exception("Error de conexión CURL ($model): " . $curlError);
         }
 
         $result = json_decode($response, true);
         
         if ($httpCode !== 200) {
             $errMsg = (is_array($result) && isset($result['error']['message'])) ? $result['error']['message'] : $response;
-            throw new \Exception("Gemini API Error ($httpCode): " . $errMsg);
+            throw new \Exception("Gemini API Error ($httpCode) en modelo $model: " . $errMsg);
         }
 
         if (!isset($result['candidates'][0]['content']['parts'][0]['text'])) {
-            throw new \Exception("Estructura de respuesta inesperada: " . $response);
+            throw new \Exception("Estructura de respuesta inesperada en $model. JSON: " . substr($response, 0, 200));
         }
 
         $content = $result['candidates'][0]['content']['parts'][0]['text'];
         
-        // Limpiar posibles residuos de markdown si Gemini ignora la instrucción
-        $content = preg_replace('/^```json\s*|```$/m', '', trim($content));
-        
-        $definition = json_decode($content, true);
-        if (!$definition) {
-            throw new \Exception("Error al parsear el JSON generado por IA: " . $content);
+        if ($returnJson) {
+            // Limpiar posibles bloques de código markdown
+            $cleanContent = preg_replace('/^```json\s*|```$/m', '', trim($content));
+            $definition = json_decode($cleanContent, true);
+            if (!$definition) {
+                throw new \Exception("Error al parsear el JSON generado por $model. Contenido: " . substr($cleanContent, 0, 200));
+            }
+            return $definition;
         }
 
-        return $definition;
+        return $content;
+    }
+
+    private static function log(string $message): void {
+        $logDir = __DIR__ . '/../../logs';
+        if (!is_dir($logDir)) {
+            @mkdir($logDir, 0777, true);
+        }
+        $file = $logDir . '/gemini_' . date('Y-m-d') . '.log';
+        $timestamp = date('Y-m-d H:i:s');
+        @file_put_contents($file, "[$timestamp] $message\n", FILE_APPEND);
     }
 }

@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import api from '../lib/api';
 import { AlertTriangle, TrendingDown, Users, Sparkles, Loader2, ArrowRight, Play, Calculator, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -65,7 +64,7 @@ const PredictiveInsights: React.FC = () => {
         ]);
 
         const apiAlerts = alertsRes.data.alerts || [];
-        setPositions(positionsRes.data || []);
+        setPositions(positionsRes.data.data || []);
 
         setAlerts(apiAlerts.map((a: any) => ({ ...a, loadingInsight: true })));
         setLoading(false);
@@ -98,9 +97,6 @@ const PredictiveInsights: React.FC = () => {
     setSimulationResult(null);
 
     try {
-      const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-      const ai = new GoogleGenAI({ apiKey });
-
       const prompt = `Eres un Experto en Operaciones SaaS y Optimizacion de Rentabilidad.
 Realiza una simulación rápida sobre el impacto de añadir un nuevo perfil al proyecto actual.
 IMPORTANTE: Debes responder ESTRICTAMENTE en el idioma correspondiente a este código de locale: "${i18n.language}". Si es "en_US" o "en_GB", responde en Inglés. Si es "pt_BR" o "pt_PT", responde en Portugués. Si es "es_AR" o "es_ES", responde en Español.
@@ -123,12 +119,9 @@ Debe incluir:
 
 Formato: texto plano. Usa un tono que brinde poder de negociación.`;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-lite",
-        contents: prompt,
-      });
+      const response = await api.post('/reports/insights/generate-text', { prompt });
 
-      setSimulationResult(response.response.text() || t('reports.sim_fail'));
+      setSimulationResult(response.data.text || t('reports.sim_fail'));
       notifySuccess(t('reports.simulation_complete', 'Simulación completada con éxito'));
     } catch (err) {
       console.error('Simulation error:', err);
@@ -139,10 +132,6 @@ Formato: texto plano. Usa un tono que brinde poder de negociación.`;
   };
 
   const generateInsights = async (apiAlerts: PredictiveAlert[]) => {
-    const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
-
-    const ai = new GoogleGenAI({ apiKey });
-
     apiAlerts.forEach(async (alert, index) => {
       const cacheKey = getCacheKey(alert);
       const cachedInsight = sessionStorage.getItem(cacheKey);
@@ -174,12 +163,9 @@ Metricas del Proyecto '${alert.projectName}':
 
 Estructura deseada: 'Atención: [Detección del problema]. Sugerencia: [Acción correctiva].'`;
 
-        const response = await ai.models.generateContent({
-          model: "gemini-2.5-flash-lite",
-          contents: prompt,
-        });
+        const response = await api.post('/reports/insights/generate-text', { prompt });
 
-        const insight = response.response.text() || t('reports.insight_error');
+        const insight = response.data.text || t('reports.insight_error');
 
         sessionStorage.setItem(cacheKey, insight);
         setApiKeyError(false);
