@@ -98,7 +98,7 @@ const ReportStudio: React.FC = () => {
       const res = await api.post('/reports/insights/run', definition);
       setResult(res.data);
     } catch (err: any) {
-      alert(err.response?.data?.error || 'Error ejecutando el reporte');
+      alert(err.response?.data?.message || err.response?.data?.error || t('reports.run_error', 'Error ejecutando el reporte'));
     } finally {
       setLoading(false);
     }
@@ -214,8 +214,9 @@ const ReportStudio: React.FC = () => {
       setGrouping(suggestion.grouping || []);
       setViewName(suggestion.name);
       setActiveTab('config');
-    } catch (err) {
+    } catch (err: any) {
       console.error('AI Suggest Error:', err);
+      alert(err.response?.data?.message || err.response?.data?.error || 'Error en sugerencia IA');
     } finally {
       setIsAiLoading(false);
     }

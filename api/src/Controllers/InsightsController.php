@@ -297,7 +297,9 @@ class InsightsController {
                 'definition' => $definition
             ]);
         } catch (\Throwable $e) {
-            Response::error('Error en Asistencia IA: ' . $e->getMessage(), 500);
+            $code = (strpos($e->getMessage(), 'mantenimiento') !== false) ? 503 : 500;
+            $msg = (strpos($e->getMessage(), 'mantenimiento') !== false) ? $e->getMessage() : 'Error en Asistencia IA: ' . $e->getMessage();
+            Response::error($msg, $code);
         }
     }
     // ─── POST /reports/insights/generate-text ────────────────────────────────
@@ -320,7 +322,9 @@ class InsightsController {
                 'text'    => $insightText
             ]);
         } catch (\Throwable $e) {
-            Response::error('Error generando insight: ' . $e->getMessage(), 500);
+            $code = (strpos($e->getMessage(), 'mantenimiento') !== false) ? 503 : 500;
+            $msg = (strpos($e->getMessage(), 'mantenimiento') !== false) ? $e->getMessage() : 'Error generando insight: ' . $e->getMessage();
+            Response::error($msg, $code);
         }
     }
 }
